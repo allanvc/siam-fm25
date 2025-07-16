@@ -1,0 +1,512 @@
+"UNF has saved me a lot of time and effort in my studies.",
+"Very innovative programs, impressed!",
+"It performs better than I anticipated academically.",
+"I love the diversity on campus.",
+"The administration process was slow, not impressed.",
+"UNF exceeded my expectations in every way.",
+"The professors are just what I need.",
+"I would not hesitate to enroll again.",
+"The user experience on the online portal could be improved.",
+"UNF is a fantastic value for the cost.",
+"My only complaint is the class size, it's too large.",
+"The educational quality has fluctuated over time.",
+"UNF truly delivers on its promises.",
+"I appreciate the student-focused approach.",
+"Great for career advancement, everyone loves the opportunities!",
+"I wish I had considered this university sooner.",
+"UNF has been a lifesaver for my career.",
+"It’s not perfect, but it works well for my goals.",
+"I'm not a fan of the limited scholarship options.",
+"This is a no-brainer, just enroll!",
+"I can’t recommend UNF enough!",
+"The campus design is very appealing.",
+"It fits my educational needs perfectly, very happy.",
+"I would enroll again without hesitation.",
+"The study materials felt outdated, not impressed.",
+"This has been a fantastic addition to my academic routine.",
+"It's reliable and easy to navigate.",
+"The student handbook was not clear at all.",
+"UNF has really simplified my academic journey.",
+"I expected more hands-on experiences from some courses.",
+"It’s exactly as described in the prospectus, no surprises.",
+"The registration process was a bit late, but overall great.",
+"I had to contact the support center, and they were helpful.",
+"Very satisfied overall, no complaints.",
+"The courses function as intended, great job!",
+"The teaching quality is top-notch, very pleased.",
+"This is not worth the tuition cost.",
+"My expectations were exceeded!",
+"It’s a great addition to my educational experience.",
+"UNF is reliable and has strong programs.",
+"I recommend it to anyone seeking quality education.",
+"I've had a great experience at UNF.",
+"This university is exactly what I needed."
+)
+reviews <- gsub("I'm ", " ", reviews)
+reviews <- gsub("i'm", " ", reviews)
+reviews <- gsub("it", " ", reviews)
+reviews <- gsub("it's", " ", reviews)
+reviews <- gsub(" for ", " ", reviews)
+reviews <- gsub(" of ", " ", reviews)
+reviews <- gsub(" it ", " ", reviews)
+reviews <- gsub(" i ", " ", reviews)
+reviews <- gsub("and", " ", reviews)
+reviews <- gsub("and", " ", reviews)
+reviews <- gsub("It's", " ", reviews)
+reviews <- gsub("my ", " ", reviews)
+reviews <- gsub(" the ", " ", reviews)
+reviews <- gsub(" a ", " ", reviews)
+reviews <- gsub(" to ", " ", reviews)
+reviews <- gsub("was ", " ", reviews)
+reviews <- gsub("what", " ", reviews)
+#
+# Assuming 'reviews' is your text vector
+corpus <- Corpus(VectorSource(reviews))
+# Check for empty documents and filter them out
+corpus <- corpus[sapply(corpus, function(doc) { length(unlist(strsplit(as.character(doc), " "))) > 0 })]
+# Preprocess the text
+corpus <- tm_map(corpus, content_transformer(tolower))  # Convert to lowercase
+corpus <- tm_map(corpus, removePunctuation)              # Remove punctuation
+corpus <- tm_map(corpus, removeNumbers)                  # Remove numbers
+corpus <- tm_map(corpus, removeWords, stopwords("en"))   # Remove stopwords
+corpus <- tm_map(corpus, stripWhitespace)                # Remove extra whitespace
+# Convert the cleaned corpus back to a character vector
+cleaned_reviews <- sapply(corpus, as.character)
+# Create a term-document matrix
+dtm <- TermDocumentMatrix(corpus)
+matrix <- as.matrix(dtm)
+word_freqs <- sort(rowSums(matrix), decreasing = TRUE)
+word_freqs <- data.frame(word = names(word_freqs), freq = word_freqs)
+# Create the word cloud using the logo mask
+logo_path <- "SimplifiedLogoBlack-resized.png" # URL of the UNF logo
+wordcloud2(data = word_freqs_unf,
+figPath = logo_path,
+size = 1,
+minSize = 1,
+# max.words = 100,
+rotateRatio = 0.35,
+# rot.per = 0.35,
+# scale = c(4, 0.5),
+color = brewer.pal(8, "Dark2")#,
+# main = "Word Cloud - Product Reviews on Amazon"
+)
+wordcloud2(data = word_freqs,
+figPath = logo_path,
+size = 1,
+minSize = 1,
+# max.words = 100,
+rotateRatio = 0.35,
+# rot.per = 0.35,
+# scale = c(4, 0.5),
+color = brewer.pal(8, "Dark2")#,
+# main = "Word Cloud - Product Reviews on Amazon"
+)
+# Create the word cloud using the logo mask
+logo_path <- "../SimplifiedLogoBlack-resized.png" # URL of the UNF logo
+wordcloud2(data = word_freqs,
+figPath = logo_path,
+size = 1,
+minSize = 1,
+# max.words = 100,
+rotateRatio = 0.35,
+# rot.per = 0.35,
+# scale = c(4, 0.5),
+color = brewer.pal(8, "Dark2")#,
+# main = "Word Cloud - Product Reviews on Amazon"
+)
+library(RColorBrewer)
+# library(devtools)
+# devtools::install_github("lchiffon/wordcloud2")
+# Simulate a dataset of reviews mentioning the University of North Florida
+set.seed(123)
+reviews <- c(
+"I love the UNF campus, it has an excellent environment!",
+"Very good educational programs, met my expectations.",
+"I didn't like the cafeteria service, the food options were limited.",
+"Amazing faculty, I recommend UNF to everyone!",
+"Excellent value for education, I would enroll again.",
+"The registration process was fast, and student support was great!",
+"Terrible communication from administration, I do not recommend.",
+"Great campus facilities, my family was impressed during the tour!",
+"The dorms were not well-maintained, I was disappointed.",
+"UNF exceeded my expectations with its diverse programs.",
+"Fantastic professors, they are very supportive.",
+"I'm so happy with the course selection!",
+"The library is beautiful and functional.",
+"Not what I expected from the advising department, quite underwhelming.",
+"This is the best university experience I've ever had!",
+"I will definitely continue my studies here.",
+"Good resources, but a bit expensive.",
+"The orientation was organized and informative.",
+"I had some issues with class registration.",
+"Excellent, will recommend UNF to friends and family.",
+"This university changed my life for the better.",
+"Incredible educational experience, truly impactful!",
+"Quality of some classes is just okay, but not worth the cost.",
+"Love the extracurricular activities, very engaging.",
+"I would not recommend the on-campus housing.",
+"The campus landscaping is vibrant and well-maintained.",
+"Great for everyday commuting, highly accessible.",
+"UNF does exactly what it claims to do academically.",
+"Disappointed with some of the student services, expected more.",
+"Would recommend UNF to others for its educational value.",
+"It's decent, but I've seen better options for some programs.",
+"Perfect for my academic needs, would enroll again!",
+"The academic advisors were very helpful.",
+"The dorm conditions were poor, not reliable.",
+"So easy to navigate the campus, I'm impressed.",
+"A bit complicated to transfer credits initially.",
+"Exceeded all my expectations, I'm thrilled with my choice!",
+"The campus size is perfect for what I needed.",
+"Not as described in the brochures, very misleading.",
+"I attend classes daily, it's a fantastic experience!",
+"The tuition cost is fair for the quality of education.",
+"UNF has become my go-to choice for education!",
+"Very sturdy academic programs, I love it.",
+"The online classes were straightforward and effective.",
+"The education at UNF has improved my career prospects.",
+"The negative reviews had me worried, but it’s great!",
+"Absolutely worth the investment in my future!",
+"The student insurance provided peace of mind.",
+"Response times from financial aid were slow, but worth the wait.",
+"I recommended UNF to a friend, and they loved it too!",
+"The course syllabi were clear and easy to follow.",
+"Not impressed with some administrative staff.",
+"The academic curriculum is well-structured but challenging.",
+"I'm a fan of the UNF brand, always a good experience.",
+"The only downside is the limited parking, it's a bit of a hassle.",
+"UNF gets the job done without any major issues.",
+"I've recommended this university to all my friends.",
+"The reviews helped me make an informed choice.",
+"Very pleased with the overall educational experience.",
+"I was skeptical, but UNF really delivers!",
+"The negative feedback was exaggerated in my opinion.",
+"Good university, but not my favorite.",
+"The variety of programs is a huge plus.",
+"I'm definitely continuing my studies here!",
+"This is a must-attend institution for anyone!",
+"The tuition is unbeatable for the quality!",
+"Great student services, very thoughtful.",
+"I've seen no issues with course availability, works perfectly.",
+"UNF stands out from other universities.",
+"It's okay, but nothing too special overall.",
+"I expected better based on some student testimonials.",
+"Would give UNF a higher rating if possible.",
+"This university has made my academic life easier.",
+"I would recommend this with some reservations.",
+"The return policy on fees was a lifesaver.",
+"The academic programs have been a pleasant surprise.",
+"The classrooms are well-equipped, I appreciate it.",
+"I wish there were more study spaces available.",
+"It didn't meet my expectations in some areas, unfortunately.",
+"The student testimonials were spot-on, very accurate!",
+"This is a reliable institution, happy with my choice.",
+"Perfect for networking, everyone loves the events.",
+"The teaching quality has been consistent.",
+"Excellent student experience, I felt valued.",
+"It's functional and inclusive, a great combo.",
+"The quality control in some departments seems lacking.",
+"I'm very satisfied with my decision to attend.",
+"Would love to see more diverse courses available.",
+"This is a solid investment in education, I recommend it.",
+"The campus looks good and functions even better.",
+"This is what I was looking for in higher education!",
+"The student feedback helped guide my decision.",
+"UNF has saved me a lot of time and effort in my studies.",
+"Very innovative programs, impressed!",
+"It performs better than I anticipated academically.",
+"I love the diversity on campus.",
+"The administration process was slow, not impressed.",
+"UNF exceeded my expectations in every way.",
+"The professors are just what I need.",
+"I would not hesitate to enroll again.",
+"The user experience on the online portal could be improved.",
+"UNF is a fantastic value for the cost.",
+"My only complaint is the class size, it's too large.",
+"The educational quality has fluctuated over time.",
+"UNF truly delivers on its promises.",
+"I appreciate the student-focused approach.",
+"Great for career advancement, everyone loves the opportunities!",
+"I wish I had considered this university sooner.",
+"UNF has been a lifesaver for my career.",
+"It’s not perfect, but it works well for my goals.",
+"I'm not a fan of the limited scholarship options.",
+"This is a no-brainer, just enroll!",
+"I can’t recommend UNF enough!",
+"The campus design is very appealing.",
+"It fits my educational needs perfectly, very happy.",
+"I would enroll again without hesitation.",
+"The study materials felt outdated, not impressed.",
+"This has been a fantastic addition to my academic routine.",
+"It's reliable and easy to navigate.",
+"The student handbook was not clear at all.",
+"UNF has really simplified my academic journey.",
+"I expected more hands-on experiences from some courses.",
+"It’s exactly as described in the prospectus, no surprises.",
+"The registration process was a bit late, but overall great.",
+"I had to contact the support center, and they were helpful.",
+"Very satisfied overall, no complaints.",
+"The courses function as intended, great job!",
+"The teaching quality is top-notch, very pleased.",
+"This is not worth the tuition cost.",
+"My expectations were exceeded!",
+"It’s a great addition to my educational experience.",
+"UNF is reliable and has strong programs.",
+"I recommend it to anyone seeking quality education.",
+"I've had a great experience at UNF.",
+"This university is exactly what I needed."
+)
+reviews <- gsub("I'm ", " ", reviews)
+reviews <- gsub("i'm", " ", reviews)
+reviews <- gsub("it", " ", reviews)
+reviews <- gsub("it's", " ", reviews)
+reviews <- gsub(" for ", " ", reviews)
+reviews <- gsub(" of ", " ", reviews)
+reviews <- gsub(" it ", " ", reviews)
+reviews <- gsub(" i ", " ", reviews)
+reviews <- gsub("and", " ", reviews)
+reviews <- gsub("and", " ", reviews)
+reviews <- gsub("It's", " ", reviews)
+reviews <- gsub("my ", " ", reviews)
+reviews <- gsub(" the ", " ", reviews)
+reviews <- gsub(" a ", " ", reviews)
+reviews <- gsub(" to ", " ", reviews)
+reviews <- gsub("was ", " ", reviews)
+reviews <- gsub("what", " ", reviews)
+#
+# Assuming 'reviews' is your text vector
+corpus <- Corpus(VectorSource(reviews))
+# Check for empty documents and filter them out
+corpus <- corpus[sapply(corpus, function(doc) { length(unlist(strsplit(as.character(doc), " "))) > 0 })]
+# Preprocess the text
+corpus <- tm_map(corpus, content_transformer(tolower))  # Convert to lowercase
+corpus <- tm_map(corpus, removePunctuation)              # Remove punctuation
+corpus <- tm_map(corpus, removeNumbers)                  # Remove numbers
+corpus <- tm_map(corpus, removeWords, stopwords("en"))   # Remove stopwords
+corpus <- tm_map(corpus, stripWhitespace)                # Remove extra whitespace
+# Convert the cleaned corpus back to a character vector
+cleaned_reviews <- sapply(corpus, as.character)
+# Create a term-document matrix
+dtm <- TermDocumentMatrix(corpus)
+matrix <- as.matrix(dtm)
+word_freqs <- sort(rowSums(matrix), decreasing = TRUE)
+word_freqs <- data.frame(word = names(word_freqs), freq = word_freqs)
+# Create the word cloud using the logo mask
+logo_path <- "../SimplifiedLogoBlack-resized.png" # URL of the UNF logo
+wordcloud2(data = word_freqs,
+figPath = logo_path,
+size = 1,
+minSize = 1,
+# max.words = 100,
+rotateRatio = 0.35,
+# rot.per = 0.35,
+# scale = c(4, 0.5),
+color = brewer.pal(8, "Dark2")#,
+# main = "Word Cloud - Product Reviews on Amazon"
+)
+library(leaflet)
+library(stringr)
+library(bitops)
+library(rjson)  # Certifique-se de que a biblioteca rjson está instalada
+library(RColorBrewer)  # Para as paletas de cores
+# Coordenadas de alguns pontos em São Paulo
+df <- structure(list(
+lat = c(-23.550520, -23.558404, -23.564983, -23.586206),
+lng = c(-46.633308, -46.660665, -46.655265, -46.636184)),
+.Names = c("lat", "lng"),
+row.names = c(NA, 4L), class = "data.frame")
+nn <- nrow(df)
+# Funções
+# =========
+viaroute <- function(lat1, lng1, lat2, lng2) {
+repeat {
+res <- try({
+rjson::fromJSON(
+file = paste("http://router.project-osrm.org/route/v1/driving/",
+lng1, ",", lat1, ";", lng2, ",", lat2,
+"?overview=full", sep = ""))
+})
+if (!inherits(res, "try-error") && !is.null(res)) {
+break
+}
+Sys.sleep(1)  # Espera um segundo antes de tentar novamente
+}
+return(res)
+}
+decode_geom <- function(encoded) {
+scale <- 1e-5
+len = str_length(encoded)
+encoded <- strsplit(encoded, NULL)[[1]]
+index = 1
+N <- 100000
+df.index <- 1
+array = matrix(nrow = N, ncol = 2)
+lat <- dlat <- lng <- dlnt <- b <- shift <- result <- 0
+while (index <= len) {
+shift <- result <- 0
+repeat {
+b = as.integer(charToRaw(encoded[index])) - 63
+index <- index + 1
+result = bitOr(result, bitShiftL(bitAnd(b, 0x1f), shift))
+shift = shift + 5
+if (b < 0x20) break
+}
+dlat = ifelse(bitAnd(result, 1),
+-(result - (bitShiftR(result, 1))),
+bitShiftR(result, 1))
+lat = lat + dlat
+shift <- result <- b <- 0
+repeat {
+b = as.integer(charToRaw(encoded[index])) - 63
+index <- index + 1
+result = bitOr(result, bitShiftL(bitAnd(b, 0x1f), shift))
+shift = shift + 5
+if (b < 0x20) break
+}
+dlng = ifelse(bitAnd(result, 1),
+-(result - (bitShiftR(result, 1))),
+bitShiftR(result, 1))
+lng = lng + dlng
+array[df.index,] <- c(lat = lat * scale, lng = lng * scale)
+df.index <- df.index + 1
+}
+geometry <- data.frame(array[1:(df.index - 1), ])
+names(geometry) <- c("lat", "lng")
+return(geometry)
+}
+map <- function() {
+m <- leaflet() %>%
+addTiles(group = "OSM") %>%
+addProviderTiles("Stamen.TonerLite") %>%
+addLayersControl(
+baseGroups = c("OSM", "Stamen.TonerLite")
+)
+return(m)
+}
+map_route <- function(df, my_list) {
+m <- map()
+m <- addCircleMarkers(m,
+lat = df$lat,
+lng = df$lng,
+color = "blue",
+stroke = FALSE,
+radius = 6,
+fillOpacity = 0.8)
+# Definindo uma paleta de cores
+colors <- RColorBrewer::brewer.pal(length(my_list), "Set1")
+for (i in 1:length(my_list)) {
+m <- addPolylines(m,
+lat = my_list[[i]]$lat,
+lng = my_list[[i]]$lng,
+color = colors[i %% length(colors) + 1],
+weight = 4,
+opacity = 1)  # Opacidade definida como 1 (totalmente opaco)
+}
+return(m)
+}
+# Principal
+# ======
+m <- map()
+m <- m %>% addCircleMarkers(lat = df$lat,
+lng = df$lng,
+color = "red",
+stroke = FALSE,
+radius = 10,
+fillOpacity = 0.8)
+print(m)
+my_list <- list()
+r <- 1
+for (i in 1:(nn-1)) {
+for (j in ((i+1):nn)) {
+my_route <- viaroute(df$lat[i], df$lng[i], df$lat[j], df$lng[j])
+geom <- decode_geom(my_route$routes[[1]]$geometry)
+my_list[[r]] <- geom
+r <- r + 1
+}
+}
+m <- map_route(df, my_list)
+print(m)
+# Save the map as an HTML widget
+saveWidget(m, file = "sp-route.html")
+# Save the map as an HTML widget
+htmlwidgets::saveWidget(m, file = "sp-route.html")
+library("tidyverse")
+library("sf")
+library("rnaturalearth")
+library("countrycode")
+library("leaflet")
+library("leafsync")
+# Obter dados do mundo ------------------------------------------------
+world <- ne_countries(scale = "small", returnclass = "sf")
+# Ler dados de James Bond ---------------------------------------------
+data_raw <- read_csv("https://raw.githubusercontent.com/FelixAnalytix/Youtube/master/data/jamesbond.csv")
+# Definir anos e mapear filmes para anos
+years <- 2020:2023
+film_year_map <- c("Casino Royale" = 2020, "Quantum of Solace" = 2021,
+"Skyfall" = 2022, "Spectre" = 2023)
+# Criar um dataframe para valores de transação
+transactions_data <- data.frame(
+Country = unique(world$name),
+Year_2020 = rep(0, length(unique(world$name))),
+Year_2021 = rep(0, length(unique(world$name))),
+Year_2022 = rep(0, length(unique(world$name))),
+Year_2023 = rep(0, length(unique(world$name)))
+)
+# Países visitados em cada ano
+visited_countries_by_year <- list(
+`2020` = c("United Kingdom", "Italy", "France"),
+`2021` = c("United Kingdom", "Italy", "France", "Spain", "Sweden"),
+`2022` = c("United Kingdom", "Italy", "France", "Spain", "Sweden", "Belgium", "Norway"),
+`2023` = c("United Kingdom", "Italy", "France", "Spain", "Sweden", "Belgium", "Norway", "Canada", "Brazil", "Japan")
+)
+# Atribuir valores de transação para os países visitados
+for (year in years) {
+year_col <- paste0("Year_", year)
+for (country in visited_countries_by_year[[as.character(year)]]) {
+transactions_data[transactions_data$Country == country, year_col] <-
+runif(1, 100000, 500000)  # Atribuir um valor aleatório
+}
+}
+# Criar uma paleta de cores baseada nos valores de transação com verde
+color_palettes <- list(
+colorNumeric(palette = "Greens", domain = transactions_data$Year_2020),
+colorNumeric(palette = "Greens", domain = transactions_data$Year_2021),
+colorNumeric(palette = "Greens", domain = transactions_data$Year_2022),
+colorNumeric(palette = "Greens", domain = transactions_data$Year_2023)
+)
+# Função para criar mapas individuais com transações -------------------
+create_map <- function(year) {
+year_col <- paste0("Year_", year)
+leaflet() %>%
+addProviderTiles("CartoDB.Positron") %>%
+addPolygons(data = world,
+fillColor = ~color_palettes[[year - 2019]](transactions_data[match(world$name, transactions_data$Country), year_col]),
+color = "darkgrey", weight = 1, opacity = 1, fillOpacity = 0.7,
+highlightOptions = highlightOptions(weight = 2, color = "white", fillOpacity = 0.7),
+label = ~paste(name, ": $",
+round(transactions_data[match(name, transactions_data$Country), year_col], 2),
+sep = ""),
+popup = ~ifelse(transactions_data[match(name, transactions_data$Country), year_col] > 0,
+paste(name, "<br>Transaction Value: $",
+round(transactions_data[match(name, transactions_data$Country), year_col], 2), sep = ""),
+paste(name, "<br>No Transactions", sep = ""))) %>%
+addLabelOnlyMarkers(lng = -20, lat = 75,
+label = paste("Year:", year),
+labelOptions = labelOptions(noHide = TRUE, direction = "top", style = list("font-weight" = "bold", "font-size" = "16px")))
+}
+# Criar mapas individuais para cada ano --------------------------------
+map_2020 <- create_map(2020)
+map_2021 <- create_map(2021)
+map_2022 <- create_map(2022)
+map_2023 <- create_map(2023)
+# Usar leafsync para criar múltiplos mapas sincronizados ---------------
+m <- sync(map_2020, map_2021, map_2022, map_2023)
+htmlwidgets::saveWidget(m, file = "world-map-business.html")
+m
+install.packages("xaringan")
+install.packages("xaringan")
+install.packages("xaringan")
+remotes::install_github('yihui/xaringan')
+remotes::install_github('yihui/xaringan')
+remotes::install_github('yihui/xaringan')
+remotes::install_github('yihui/xaringan', force=TRUE)

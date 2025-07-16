@@ -1,0 +1,3 @@
+remotes::install_github('yihui/xaringan', force=TRUE)
+
+install.packages("xaringan", )

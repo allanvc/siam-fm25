@@ -1,0 +1,21 @@
+# Carregar as bibliotecas necessárias
+library(ggplot2)
+
+# Definir os dados
+x <- c(5.3, 5.4, 6, 7.2, 6.7, 5.5, 5.6)
+y <- c(2.7, 2.8, 3.5, 2.5, 3.1, 3.6, 3.9)
+date <- 1:7
+values <- c(x, y)
+series <- c(rep("stock Y", 7), rep("stock X", 7))
+df <- data.frame(date, values, as.factor(series))
+
+# Criar o gráfico
+ggplot(df, aes(x = date, y = values, linetype = series, color = series)) +
+  geom_line(size = 1.2) +
+  annotate("text", x = 4, y = 7.4, label = "Open\nshort position", size = 3.5) +
+  annotate("text", x = 4, y = 2.3, label = "Open\nlong position", size = 3.5) +
+  annotate("text", x = 6.1, y = 4.5, label = "Rewind positions", size = 3.5) +
+  scale_color_manual(values = c("blue", "orange")) + # Defina as cores das linhas
+  labs(title = "Pairs Trading Mechanism", x = "Date", y = "Values") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))  # Centralizar o título e deixá-lo em negrito

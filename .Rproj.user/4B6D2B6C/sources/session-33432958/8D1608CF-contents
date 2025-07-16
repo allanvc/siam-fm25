@@ -1,0 +1,54 @@
+# Carregar pacotes necessários
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+
+# Parâmetros e dados simulados
+total_days <- 100
+window_size <- 15
+forming_days <- 50  # Retângulo maior para "Forming"
+decision_days <- 5
+trading_days <- 5
+
+set.seed(123)
+dates <- seq.Date(as.Date("2023-01-01"), by = "days", length.out = total_days)
+price <- cumsum(rnorm(total_days))
+data <- data.frame(Date = dates, Price = price)
+
+# Função para adicionar retângulos representando os períodos de forming, decision e trading
+get_periods <- function(data, start_index, forming_days, decision_days, trading_days) {
+  start_date <- data$Date[start_index]
+  periods <- data.frame(
+    Period = c("Forming", "Decision", "Trading"),
+    xmin = c(start_date, start_date + forming_days, start_date + forming_days + decision_days),
+    xmax = c(start_date + forming_days, start_date + forming_days + decision_days, start_date + forming_days + decision_days + trading_days),
+    ymin = min(data$Price),
+    ymax = max(data$Price)
+  )
+  return(periods)
+}
+
+# Criar uma lista com os dados dos períodos para cada frame
+frames_data <- lapply(1:(total_days - window_size), function(i) {
+  periods <- get_periods(data, i, forming_days, decision_days, trading_days)
+  periods$Frame <- i
+  periods
+}) %>% bind_rows()
+
+# Mesclar dados do preço com os períodos
+data$Frame <- 1:nrow(data)
+frames_data <- left_join(frames_data, data, by = "Frame")
+
+# Plot com gganimate e configurações de animação
+p <- ggplot(frames_data) +
+  geom_line(aes(x = Date, y = Price)) +
+  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = Period), alpha = 0.3) +
+  scale_fill_manual(values = c("Forming" = "red", "Decision" = "green", "Trading" = "blue")) +
+  theme_minimal() +
+  labs(title = "Movimento da Janela Deslizante ao Longo do Tempo", x = "Data", y = "Preço") +
+  transition_manual(Frame) +
+  enter_fade() + 
+  exit_fade()
+
+# Renderizar a animação com configurações
+animate(p, nframes = 200, fps = 5, end_pause = 50, rewind = TRUE)

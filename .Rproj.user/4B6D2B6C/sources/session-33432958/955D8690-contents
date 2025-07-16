@@ -1,0 +1,26 @@
+# Instalar e carregar o pacote 'truncnorm' (se ainda não estiver instalado)
+if (!require(truncnorm)) install.packages("truncnorm")
+library(truncnorm)
+
+# Definir os parâmetros da distribuição normal truncada
+mean <- 1.5
+sd <- 1
+
+# Criar uma sequência de valores para o eixo x (de 0 em diante, pois é truncada)
+betas <- seq(0, 6, length = 100)
+q <- quantile(betas, c(0.01, 0.99))
+
+# Calcular a densidade normal truncada para cada valor de x
+y <- dtruncnorm(x, a = 0, mean = mean, sd = sd)
+
+# Plotar a curva de densidade normal truncada
+plot(betas, y, type = "l", lwd = 2, col = "blue", 
+     main = "Distribuição Normal Truncada (x > 0)", 
+     xlab = "Valores", 
+     ylab = "Densidade")
+
+# Adicionar o preenchimento com hachuras e alpha suave
+polygon(c(0, x), c(0, y), col = rgb(0, 0, 1, alpha = 0.2), border = NA)
+
+# Adicionar uma linha vertical na média
+abline(v = mean, col = "red", lty = 2)

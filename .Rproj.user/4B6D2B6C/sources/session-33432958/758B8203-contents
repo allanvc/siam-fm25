@@ -1,0 +1,17 @@
+# Carregar as bibliotecas necessárias
+library(ggplot2)
+library(gapminder)
+library(dplyr)
+
+# Criar o gráfico com facetting por ano e remover pop da legenda
+p <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point(aes(size = pop), alpha = 0.7) + # Tamanho definido apenas no geom_point
+  scale_x_log10() +
+  labs(x = "GDP per capita", y = "Life expectancy", title = "Gapminder Data Facetted by Year") +
+  facet_wrap(~ year) + # Facetting por ano
+  scale_size(guide = 'none') + # Remover a legenda do tamanho
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Exibir o gráfico
+print(p)

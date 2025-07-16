@@ -1,0 +1,862 @@
+---
+title: "A Bayesian Approach to Generate Distribution-based Signals in Pairs Trading"
+#subtitle: "<s> How to make money in financial markets using stats </s>"
+subtitle: "SIAM Conference on Financial Mathematics and Engineering (FM25)"
+author: "Allan Quadros"
+date: "Department of Management </br> University of North Florida </br> `r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    # self_contained: true
+    # pandoc_args: --wrap=preserve
+    lib_dir: libs
+    css: ["./css/siam.css", "./css/kstate-fonts.css", "custom.css"]
+    nature:
+      beforeInit: ["./js/midd_xaringan.js"]
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+    includes:
+      in_header: "./libs/partials/header.html"
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+layout: true
+background-image: url(./img/logo/logo2.jpg)
+background-position: 0% 100%
+background-size: 5%
+
+	
+```{css echo=FALSE}
+.highlight-last-item > ul > li,
+.highlight-last-item > ol > li {
+  opacity: 0.5;
+}
+.highlight-last-item > ul > li:last-of-type,
+.highlight-last-item > ol > li:last-of-type {
+  opacity: 1;
+}
+```
+
+
+---
+## <code> Table of contents <font color=#0f0e5d></font></code>
+
+> 1 Introduction
+
+> + 1.1 Cointegration </br></br>
+
+> 2 Proposed Method
+
+> + 2.1 Motivation 
+
+> + 2.2 Theoretical Background </br></br>
+
+> 3 Results
+
+> + 3.1 Empirical Results
+
+> + 3.2 Pair Selection Simulation Study </br></br>
+
+> 4 Conclusion
+
+
+---
+class: gray-slide, inverse, center, middle
+## Introduction
+
+
+---
+###<font color =#4C5455><code>Co-moving assets: __Coca-Cola vs. Pepsi__</code></font>
+
+
+```{r, message=FALSE, results='asis'}
+library(plotly)
+fig <- readRDS("plotly_LS3.rds")
+fig
+```
+
+
+---
+###<font color =#4C5455><code>__Pairs trading__: mechanics</code></font>
+
+
+```{r, fig.height=7, fig.width=11, fig.align='center', fig.retina=10}
+# Carregar as bibliotecas necessárias
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Definir os dados
+x <- c(5.3, 5.4, 6, 7.2, 6.7, 5.5, 5.6)
+y <- c(2.7, 2.8, 3.5, 2.5, 3.1, 3.6, 3.9)
+dates <- as.Date(1:7, origin = "2023-01-01")  # Criar datas comuns
+
+# Criar um data frame
+df <- data.frame(dates, stock_X = x, stock_Y = y)
+
+# Transformar para formato longo para ggplot2
+df_long <- df %>%
+  pivot_longer(cols = c(stock_X, stock_Y), names_to = "stock", values_to = "values")
+
+# Criar o gráfico usando ggplot2
+ggplot(df_long, aes(x = dates, y = values, color = stock, 
+                    # linetype = stock
+                    )) +
+  geom_line(size = 1.2) +
+  scale_color_manual(values = c("#00aca0", "gray")) + # Define cores para cada série
+  # scale_linetype_manual(values = c("solid", "dashed")) + # Define tipos de linha
+  ylim(2, 8) +  # Limites do eixo y
+  labs(title = "Pairs Trading Mechanism", x = "Date", y = "Values") +
+  theme_minimal() +  # Tema minimalista
+  theme(
+    legend.position = "none",  # Remover a legenda
+    plot.title = element_text(hjust = 0, vjust = 1, size = 14),  # Alinhar título à esquerda
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)  # Ajustar margens
+  ) +
+  # Adicionar o intervalo de datas no canto superior direito
+  annotate("text", x = as.Date("2023-01-08"), y = 8.0, 
+           label = "2023-01-02 / 2023-01-08", 
+           hjust = 1, size = 5, color = "black") +
+  # Adicionar anotações
+  annotate("text", x = as.Date("2023-01-04"), y = 7.4, label = "Open\nshort position", size = 5, color = "black") +
+  annotate("text", x = as.Date("2023-01-04"), y = 2.3, label = "Open\nlong position", size = 5, color = "black") +
+  annotate("text", x = as.Date("2023-01-06"), y = 4.7, label = "Rewind\npositions", size = 5, color = "black")
+
+```
+
+
+---
+class: highlight-last-item
+###<font color =#4C5455><code>__Pairs trading__: main challenges?</code></font>
+
+<br>
+<br>
+
+> 1. __Identifying pairs__ of securities that exhibit a __stable relationship__ in the desired time frame. <br><br>
+
+> 2. Optimal __share allocation__ between the two assets to appropriately hedge against market volatility. <br><br>
+    
+> 3. Generating __accurate trading signals__ to precisely time the entry and exit points. <br><br>
+
+
+---
+class: highlight-last-item
+###<font color =#4C5455><code>__Pairs trading__: main adopted strategies</code></font>
+
+<br>
+<br>
+
+
+> Distance Method;
+
+> __Cointegration__;
+
+> Copulas;
+
+> Ornstein-Uhlenbeck;
+
+> Machine Learning;
+
+> Others.
+
+
+
+---
+###<font color =#4C5455><code>Cointegration strategy: __pair selection__</code></font>
+
+
+</br>
+</br>
+
+<code> Cointegration test - a two step procedure designed by Engle & Granger (1987): </code> </br>
+
+
+--
+> __One:__ Select two stocks, say $X$ and $Y$, that historically __move together__ and test if the two price series ( $y_t$ and $x_t$ ) are __non-stationary__, i.e. both series have an unit root $\gamma = 0$; <br><br>
+
+
+--
+> __Two:__ Fit a linear model $\hat{y_t} = \hat{\beta_0} + \hat{\beta_1} x_t$, and test the __residuals__ ( $u_t$ ) for stationarity, i.e., test if $u_t$ does not have an unit root (i.e. test $\gamma < 0$).
+
+
+<!-- ??? where $I(1)$ denotes an integrated process of order 1, meaning that the series becomes stationary only after taking the first difference. -->
+
+<br>
+
+--
++ If __`(1)`__ and __`(2)`__ hold, then the series are said to be __cointegrated__ - stocks $X$ and $Y$ share a __long-term equilibrium relationship__.
+
+
+
+
+
+<!-- ??? LEGAL: O alpha nao precisa entrar no calculo justamente pelo motivo do qual eu distorci o primeiro grafico com log(PEP) - c. Sem o c, o efeito seria o mesmo, ou sejam nao interessa a distancia absoluta entre KO e PEP - o que interesse eh o desvio relativo entre ambas e nao o desvio total considerando o nivel inicial. Alem do fato de que ao icnluirmos alpha, teremos mais uma variavel para estimar tornando o modelo mais complexo e prone to more errors and overfitting-->
+
+
+<!-- ??? falar do zscore e mostrar o grafico 2 (mudar as cores - usar o codigo do palomar) - falar sobre transformar as duas series em um ativo sintetico -->
+
+
+---
+###<font color =#4C5455><code>Cointegration strategy: __trading__</code></font>
+
+<!-- TIRAR ESSE E FALAR TD ISSO SOMENTE MOSTRANDO GRAFICOS -->
+
+<!-- > Trading signals are generated based on the standard deviations of the spread $\hat{y_t} - \hat{\beta_1} x_t$ -->
+
+
+<!-- > __Positions:__ whenever the Z-score $> \mid \pm k\sigma \mid$ thresholds -->
+
+<!-- > __Sizing:__ go long (or short) $\hat{\beta_1}$ dollars of stock $X$ for each dollar of stock $Y$ __ $^{(**)}$ __ -->
+
+<!-- > __Take-profit:__ when Z-score reverts back to `0` - the long-term average. -->
+
+<!-- > __Stop-loss:__ when the Z-score reaches a defined loss margin ( $\pm|k\sigma + \xi|$ ). -->
+
+
+```{r, fig.height=7, fig.width=11, fig.align='center', fig.retina=4}
+# fig.retina melhora a resolucao do plot
+# ```{r, fig.height=6, fig.width=10, fig.align='center', fig.retina=4}
+library(dplyr)
+library(quantmod)
+library(ggplot2)
+library(gridExtra)
+
+# Definir o período de coleta de dados
+start_date <- as.Date("2023-06-01")
+end_date <- Sys.Date()
+
+# Obter os dados do Yahoo Finance
+tickers <- c("KO", "PEP")
+
+KO <- getSymbols(tickers[1], src = "yahoo", from = start_date, to = end_date, verbose = FALSE, auto.assign = FALSE)
+
+PEP <- getSymbols(tickers[2], src = "yahoo", from = start_date, to = end_date, verbose = FALSE, auto.assign = FALSE)
+
+# Extrair os preços de fechamento e calcular o log dos preços
+KO_log_prices <- log(Cl(KO))
+PEP_log_prices <- log(Cl(PEP))
+
+# Criar um dataframe com os preços em log
+prices_df <- data.frame(
+  Date = index(KO_log_prices),
+  KO = as.numeric(KO_log_prices),
+  PEP = as.numeric(PEP_log_prices - 0.6)
+)
+
+mod <- lm(KO ~ PEP, data = prices_df)
+
+# Calcular o spread entre os preços em log e o z-score
+prices_df <- prices_df %>%
+  mutate(
+    Spread = KO - KO - (coef(mod)[2] * PEP),
+    Zscore = (Spread - mean(Spread)) / sd(Spread)
+  )
+
+# Gráfico 1: Preços históricos em log de KO e PEP com legenda abaixo
+p1 <- ggplot(prices_df, aes(x = Date)) +
+  geom_line(aes(y = KO, color = "KO"), size = 0.6) +
+  geom_line(aes(y = PEP, color = "PEP"), size = 0.6) +
+  scale_color_manual(values = c("KO" = "#00aca0", "PEP" = "gray")) +
+  labs(title = "Pair: KO vs. PEP", y = "Log Price", x = NULL) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom"  # Posiciona a legenda na parte inferior
+  )
+
+# Gráfico 2: Z-score do spread com linhas em -2 e +2 desvios padrão
+# Gráfico 2: Z-score do spread com linhas em -2 e +2 desvios padrão e novas cores
+p2 <- ggplot(prices_df, aes(x = Date, y = Zscore)) +
+  geom_line(color = "black", size = 0.6) +  # Azul suave
+  geom_hline(yintercept = c(-2, 2), linetype = "dashed", color = "darkgray") +  # Verde escuro
+  geom_hline(yintercept = c(-3, 0, 3), linetype = "dashed", color = "#4a90e2") +  # Azul suave
+  labs(title = "Z-score of Spread", y = "Z-score", x = "Date") +
+  theme_minimal()
+
+# Combinar os gráficos
+grid.arrange(p1, p2, ncol = 1, heights = c(2, 1))
+
+
+```
+
+
+<!-- ??? LEGAL: O alpha nao precisa entrar no calculo justamente pelo motivo do qual eu distorci o primeiro grafico com log(PEP) - c. Sem o c, o efeito seria o mesmo, ou sejam nao interessa a distancia absoluta entre KO e PEP - o que interesse eh o desvio relativo entre ambas e nao o desvio total considerando o nivel inicial. Alem do fato de que ao icnluirmos alpha, teremos mais uma variavel para estimar tornando o modelo mais complexo e prone to more errors and overfitting-->
+
+
+<!-- ??? falar do zscore e mostrar o grafico 2 (mudar as cores - usar o codigo do palomar) - falar sobre transformar as duas series em um ativo sintetico -->
+
+
+
+---
+class: gray-slide, inverse, center, middle
+<!-- title-slide-section-grey,  -->
+## Proposed Bayesian Method
+
+
+---
+###<font color =#4C5455><code> Proposed method: __motivation__ </code></font>
+
+<br>
+
+<code> Problems with the standard cointegration method: </code></br></br>
+
+
+--
+> High false positive rates when used within a data mining approach;</br></br></br>
+
+--
+> Has been widely adopted by both institutional and individual investors;</br></br></br>
+
+--
+> Can result in premature/delayed exits.
+
+<!-- ??? alpha level is inflated -->
+
+<!-- ??? less opportunities - the margins have shrunk -->
+
+<!-- ??? practically speaking, relying only on the zscore of the spread is not very effective -- sometimes the relationship between the securities changes and the zscore does not capture that. Soetimes, it is too sensitive. -->
+
+<!-- ??? Competes against high frequency trading to identify distortions ? -->
+
+
+---
+###<font color =#4C5455><code> Proposed method: __hypotheses__ </code></font>
+
+> __Idea:__ $\hat{\beta_1}$ carries important information about the linear relationship between the underlying __co-moving__ securities.</br></br>
+
+--
+> __Proposal:__ Add a __confirmation layer__ to the standard cointegration strategy by evaluating the behavior of the __hedge ratio__ $\hat{\beta_1}$.</br></br>
+
+--
+> __How:__ Deriving the distribution of $\hat{\beta}_1$ and establishing two thresholds within this distribution that will serve as confirmation boundaries for the trading strategy.</br></br>
+
+--
+<code> __Hypotheses:__  </code>
+  
+  > __(i)__ produces more accurate trading signals;
+  
+  > __(ii)__ increases false discovery rates (FDR) in cointegration test. __ $^{(***)}$ __
+
+---
+###<font color =#4C5455><code> Bayesian method: __mechanics__ </code></font>
+
+
+```{r, fig.height=7, fig.width=12, fig.align='center', fig.retina=12, results='hold'}
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Function to create the distribution plot with different alpha values using base R
+create_beta1_distribution_plot_base_r <- function(alpha_small = 0.05, alpha_large = 0.15) {
+  # Configurar o dispositivo gráfico com 3 regiões: gráfico superior, legenda, gráfico inferior
+  # Salvar parâmetros gráficos originais
+  old_par <- par(no.readonly = TRUE)
+  
+  # Definir as margens externas (outer margins) para acomodar o título geral
+  par(oma = c(0, 0, 3, 0))  # Adiciona 3 linhas de margem no topo para o título geral
+  
+  # Configurar layout com 3 painéis: gráfico superior, legenda, gráfico inferior
+  layout(matrix(c(1, 2, 3), nrow = 3, ncol = 1), heights = c(4, 0.5, 4))
+  
+  # Configurar margens para o gráfico superior
+  par(mar = c(4, 4, 5, 5) + 0.9)
+  
+  # Create a sequence for x values of the truncated normal distribution (β₁ > 0)
+  x <- seq(0, 4, length.out = 1000)
+  
+  # Calculate truncated normal distribution values
+  # Density function for truncated normal (μ = 0, σ = 1, lower bound = 0)
+  truncated_normal <- function(x, mean = 0, sd = 1) {
+    # For x > 0, the density is 2*dnorm(x) to account for truncation
+    2 * dnorm(x, mean, sd)
+  }
+  
+  y <- truncated_normal(x)
+  
+  # Calculate quantiles for different alpha values
+  # For truncated normal, we need to adjust the quantiles to reflect β₁ > 0
+  # These are custom values to demonstrate the concept visually
+  q_small_low <- qnorm(alpha_small*2, 0, 1) # Adjust for truncation
+  q_small_high <- qnorm(1 - alpha_small/2, 0, 1) # Adjust for truncation
+  q_large_low <- qnorm(alpha_large*2, 0, 1) # Adjust for truncation
+  q_large_high <- qnorm(1 - alpha_large/2, 0, 1) # Adjust for truncation
+  
+  # Make sure lower quantiles are positive for the truncated normal
+  q_small_low <- max(0.1, q_small_low)
+  q_large_low <- max(0.3, q_large_low)
+  
+  # First plot (smaller alpha)
+  # plot(x, y, type = "n", xlab = expression(paste("Values of ", beta[1])), ylab = "Density",
+  #      main = bquote(paste(alpha, " = ", .(alpha_small))),
+  #      cex.main = 2.6, cex.lab = 2, font.main = 2, bty = "n", xaxt = "n")
+  
+  plot(x, y, type = "n", xlab = "", ylab = "Density",
+       main = bquote(paste(alpha, " = ", .(alpha_small))),
+       cex.main = 2.6, cex.lab = 2, font.main = 2, bty = "n", xaxt = "n")
+  
+  # Add subtitle
+  mtext("Wider well-behaved region \n(less selective entry, more selective exit)", 
+        side = 3, line = -7.5, at = 3, cex = 1.4, font = 3)
+  
+  # Fill the well-behaved region (middle area)
+  # For truncated normal, lower bound is 0
+  lower_bound <- max(0, q_small_low)
+  x_middle <- x[x >= lower_bound & x <= q_small_high]
+  y_middle <- y[x >= lower_bound & x <= q_small_high]
+  
+  # Draw hatched orange area for well-behaved region
+  # First, fill with solid very light orange
+  polygon(c(x_middle[1], x_middle, x_middle[length(x_middle)]), 
+          c(0, y_middle, 0), col = rgb(0.9, 0.9, 1), border = NA)
+  
+  par(xpd = TRUE)
+  arrows(x0 = 2.2, y0 = 0.57, x1 = 1.5, y1 = 0.45, 
+         length = 0.15, angle = 20, code = 2, 
+         lwd = 2, col = "black")
+  par(xpd = FALSE)
+  
+  # Then add hatching with orange lines
+  if (length(x_middle) > 10) {
+    # Calculate interval between lines based on region width
+    region_width <- q_small_high - lower_bound
+    line_interval <- region_width / 15  # 15 lines in the region
+    
+    # Draw diagonal orange lines for hatching
+    for (i in seq(lower_bound, q_small_high, by = line_interval)) {
+      # Get max height at this x position
+      height_idx <- which.min(abs(x - i))
+      max_height <- y[height_idx]
+      
+      # Draw the line
+      lines(c(i, i), c(0, max_height), col = "blue", lty = 1, lwd = 1)
+    }
+  }
+  
+  # For truncated normal, only show buy signal if q_small_low > 0
+  if (q_small_low > 0) {
+    x_left <- x[x < q_small_low & x >= 0]
+    y_left <- y[x < q_small_low & x >= 0]
+    if (length(x_left) > 0) {
+      # Fill with light gray instead of light red
+      polygon(c(x_left[1], x_left, x_left[length(x_left)]), 
+              c(0, y_left, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+    }
+  }
+  
+  # Fill the sell signal region (right area) with light gray
+  x_right <- x[x > q_small_high]
+  y_right <- y[x > q_small_high]
+  polygon(c(x_right[1], x_right, x_right[length(x_right)]), 
+          c(0, y_right, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+  
+  # Add the distribution curve
+  lines(x, y, lwd = 2)
+  
+  # Add vertical lines for quantiles - update color
+  abline(v = q_small_low, lty = 2, col = "gray40", lwd = 2)
+  abline(v = q_small_high, lty = 2, col = "gray40", lwd = 2)
+  
+  # Add colored regions along the x-axis to highlight different zones - make thicker
+  add_color_highlight <- function(x_start, x_end, color) {
+    # Create a thicker rectangular region
+    rect(x_start, -0.04, x_end, 0, col = color, border = NA)
+  }
+  
+  # Add the colored highlights for the different regions
+  if (q_small_low > 0) {
+    # Buy signal region (left)
+    add_color_highlight(0, q_small_low, "gray40")
+  }
+  
+  # Well-behaved region (middle)
+  add_color_highlight(max(0, q_small_low), q_small_high, "blue")
+  
+  # Sell signal region (right)
+  add_color_highlight(q_small_high, 4, "gray40")
+  
+  # Add quantile labels - placed below x-axis
+  if (q_small_low > 0) {
+    # Draw vertical line at lower quantile
+    lines(c(q_small_low, q_small_low), c(0, 0.05), col = "gray40", lty = 2, lwd = 1.5)
+    # Add label below the axis - use xpd=TRUE to allow drawing outside the plot region
+    par(xpd = TRUE)
+    text(q_small_low, -0.03, bquote(paste("q"[alpha], " = q"[.(alpha_small)])), 
+         cex = 2.2, col = "black", pos = 1)
+    par(xpd = FALSE)
+  }
+  
+  # Draw vertical line at upper quantile
+  lines(c(q_small_high, q_small_high), c(0, 0.05), col = "gray40", lty = 2, lwd = 1.5)
+  # Add label below the axis
+  par(xpd = TRUE)
+  text(q_small_high, -0.03, bquote(paste("q"[1-alpha], " = q"[.(1-alpha_small)])), 
+       cex = 2.2, col = "black", pos = 1)
+  par(xpd = FALSE)
+  
+  # Painel central para a legenda
+  # Configurar margens mínimas para o painel da legenda
+  par(mar = c(0, 0, 0, 0))
+  
+  # Criar um plot vazio para a legenda
+  plot(0, 0, type = "n", axes = FALSE, xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1))
+  
+  # Adicionar a legenda centralizada
+  legend("center", 
+         legend = c(
+           expression(paste("well-behaved ", beta[1], " interval (confirmatory region for entry signals)")),
+           expression(paste("ill-behaved ", beta[1], " interval (confirmatory region for stop-loss signals)"))
+         ),
+         fill = c("blue", "gray40"),
+         border = NA,
+         bty = "n",
+         cex = 1.82,
+         pt.cex = 10,
+         horiz = FALSE)
+  
+  # Configurar margens para o gráfico inferior - adicionando espaço para o eixo x
+  par(mar = c(3, 4, 5, 5) + 1)
+  
+  # Second plot (larger alpha)
+  plot(x, y, type = "n", xlab = expression(paste("Values of ", beta[1])), ylab = "Density",
+       main = bquote(paste(alpha, " = ", .(alpha_large))), 
+       cex.main = 2.6, cex.lab = 2, font.main = 2, bty = "n", xaxt = "n")
+  
+  # Add subtitle
+  mtext("Narrower well-behaved region \n(more selective entry, less selective exit)", 
+        side = 3, line = -7.5, at = 2.5, cex = 1.4, font = 3)
+  
+  # Fill the well-behaved region (middle area) with hatched orange
+  lower_bound <- max(0, q_large_low)
+  x_middle <- x[x >= lower_bound & x <= q_large_high]
+  y_middle <- y[x >= lower_bound & x <= q_large_high]
+  
+  # First, fill with solid very light orange
+  polygon(c(x_middle[1], x_middle, x_middle[length(x_middle)]), 
+          c(0, y_middle, 0), col = rgb(0.9, 0.9, 1), border = NA)
+  
+  par(xpd = TRUE)
+  arrows(x0 = 1.63, y0 = 0.57, x1 = 1.25, y1 = 0.52, 
+         length = 0.15, angle = 20, code = 2, 
+         lwd = 2, col = "black")
+  par(xpd = FALSE)
+  
+  # Then add hatching with orange lines
+  if (length(x_middle) > 10) {
+    # Calculate interval between lines based on region width
+    region_width <- q_large_high - lower_bound
+    line_interval <- region_width / 15  # 15 lines in the region
+    
+    # Draw vertical orange lines for hatching
+    for (i in seq(lower_bound, q_large_high, by = line_interval)) {
+      # Get max height at this x position
+      height_idx <- which.min(abs(x - i))
+      max_height <- y[height_idx]
+      
+      # Draw the line
+      lines(c(i, i), c(0, max_height), col = "blue", lty = 1, lwd = 1)
+    }
+  }
+  
+  # For truncated normal, only show buy signal if q_large_low > 0
+  if (q_large_low > 0) {
+    x_left <- x[x < q_large_low & x >= 0]
+    y_left <- y[x < q_large_low & x >= 0]
+    if (length(x_left) > 0) {
+      # Fill with light gray instead of light red
+      polygon(c(x_left[1], x_left, x_left[length(x_left)]), 
+              c(0, y_left, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+    }
+  }
+  
+  # Fill the sell signal region (right area) with light gray
+  x_right <- x[x > q_large_high]
+  y_right <- y[x > q_large_high]
+  polygon(c(x_right[1], x_right, x_right[length(x_right)]), 
+          c(0, y_right, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+  
+  # Add the distribution curve
+  lines(x, y, lwd = 2)
+  
+  # Add vertical lines for quantiles - update color
+  abline(v = q_large_low, lty = 2, col = "gray40", lwd = 2)
+  abline(v = q_large_high, lty = 2, col = "gray40", lwd = 2)
+  
+  # Add colored regions along the x-axis for the second plot too
+  if (q_large_low > 0) {
+    # Buy signal region (left)
+    add_color_highlight(0, q_large_low, "gray40")
+  }
+  
+  # Well-behaved region (middle)
+  add_color_highlight(max(0, q_large_low), q_large_high, "blue")
+  
+  # Sell signal region (right)
+  add_color_highlight(q_large_high, 4, "gray40")
+  
+  # Add quantile labels below x-axis for second plot
+  if (q_large_low > 0) {
+    # Draw vertical line at lower quantile
+    lines(c(q_large_low, q_large_low), c(0, 0.05), col = "gray40", lty = 2, lwd = 1.5)
+    # Add label below the axis
+    par(xpd = TRUE)
+    text(q_large_low, -0.03, bquote(paste("q"[alpha], " = q"[.(alpha_large)])), 
+         cex = 2.2, col = "black", pos = 1)
+    par(xpd = FALSE)
+  }
+  
+  # Draw vertical line at upper quantile
+  lines(c(q_large_high, q_large_high), c(0, 0.05), col = "gray40", lty = 2, lwd = 1.5)
+  # Add label below the axis
+  par(xpd = TRUE)
+  text(q_large_high, -0.03, bquote(paste("q"[1-alpha], " = q"[.(1-alpha_large)])), 
+       cex = 2.2, col = "black", pos = 1)
+  par(xpd = FALSE)
+  
+  # Add two-line title with atop()
+  # mtext(expression(atop("Quantile Parameter " * alpha * " and 'Well-behaved' Intervals",
+  #                       "under the Full Conditional of " * beta[1])),
+  #       side = 3, line = -2.3, outer = TRUE, cex = 1.7, font = 2)
+  mtext(expression(atop("Full Conditional Distribution of " * beta[1])),
+        side = 3, line = -2.3, outer = TRUE, cex = 1.7, font = 2)
+  
+  # Reset to default
+  par(old_par)
+}
+
+# Exemplo de uso
+create_beta1_distribution_plot_base_r(alpha_small = 0.05, alpha_large = 0.15)
+
+```
+
+
+
+
+
+
+---
+###<font color =#4C5455><code> Theoretical Background: __hierarchical Bayesian model__ </code></font>
+
+<code> Using results from Gelfand _et al._ (1992), Hooten & Hefley (2019), and Rencher (2007), we have: </code>
+
+--
+<code> __Likelihood:__ </code>
+
+.my-style2[
+> $$\boldsymbol{y} \sim \mathcal{N}(\boldsymbol{X\beta}, \sigma^2)$$
+
+]
+
+.my-style[
+where $\boldsymbol{\beta} = \begin{bmatrix} \beta_0 & \beta_1 \end{bmatrix}^\top$
+]
+
+
+--
+<code> __Priors:__ </code>
+.my-style2[
+> $$\boldsymbol{\beta} \sim \mathcal{TN}(\boldsymbol{\mu_{\beta}} = \mathbf{(X'X)^{-1}X'y}, \boldsymbol{\Sigma_{\beta}} = \sigma_0^2 \mathbf{(X'X)^{-1}}, \phantom{.}0, +\infty)$$ 
+
+]
+
+.my-style[
+where $\widehat{\sigma_0^2} = \frac{1}{n-2}\boldsymbol{y'(I - H)y}$ and $\boldsymbol{H = X(X'X)^{-1}X'}$
+
+]
+
+.my-style2[
+>  $$\sigma^2 \sim \mathcal{IG}(q, r)$$
+
+]
+
+
+--
+<code> __Conjugate full-conditional posteriors:__ </code>
+.my-style2[
+> $$\boldsymbol{\beta} \mid \boldsymbol{y}, \sigma^2, \beta_1 > 0 \equiv \mathcal{TN}(\boldsymbol{\mu} = \boldsymbol{A^{-1}b}, \boldsymbol{\Sigma} = \boldsymbol{A^{-1}}, \phantom{.}0, +\infty)$$
+
+]
+
+.my-style[
+where $\boldsymbol{A} \equiv \boldsymbol{X}^\top (\sigma^2\boldsymbol{I})^{-1} \boldsymbol{X} + \boldsymbol{\Sigma_\beta}^{-1}$ and $\boldsymbol{b} \equiv \boldsymbol{X}^\top (\sigma^2\boldsymbol{I})^{-1} \boldsymbol{y} + \boldsymbol{\Sigma_\beta}^{-1} \boldsymbol{\mu_\beta}$
+]
+
+.my-style2[
+> $$\sigma^2 \mid \boldsymbol{y, \beta}, \beta_1 > 0 \equiv \mathcal{IG}(\tilde q, \tilde r)$$
+
+]
+
+.my-style[
+where $\tilde q = q + \frac{n}{2}$ and $\tilde r = \left[\frac{1}{2}\boldsymbol{(y - X\beta)'(y - X\beta)} + \frac{1}{r}\right]^{-1}$
+]
+
+---
+class: gray-slide, inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Results
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __data, parameters & backtesting__ </code></font>
+
+.pull-left[
+
+> Alpha Vantage and MT5 data; <br>
+
+> + 30 min timeframe for signals
+
+> + 5 min timeframe for execution
+
+> + 10 years of data for the US: __`02-01-2015 - 01-31-2025`__
+
+> + 5+ years of data for Brazil: __`08-01-2020 - 01-31-2025`__
+
+]
+
+
+
+.pull-right[
+
+> Backtest consisted of sliding window with 3 periods: forming `[t-1]` | decision `[t]` | trading `[t+1]`;<br><br>
+
+<br>
+
+> Parameters: 
+
+> + forming window $w \in \{65, 130\}$; <br>
+
+> + quantile parameter $\alpha \in \{0.05, 0.15\}$; <br>
+
+> + thresholds $L/U \in \{\pm1, \pm2\}$; <br>
+
+> + loss margin $\xi = 1$
+
+]
+
+---
+###<font color =#4C5455><code> Empirical Results: __backtesting__ </code></font>
+
+<iframe src="animated_z_score_with_spike_and_stabilization6 (4).html" width="750" height="520" style="border:none;"></iframe>
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __U.S.__ </code></font>
+
+<br>
+<br>
+<br>
+
+.center[
+
+[__LINK__](./results/US2-new.html)
+
+]
+
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __Brazil__ </code></font>
+
+
+<br>
+<br>
+<br>
+
+.center[
+
+[__LINK__](./results/Brazil2-new.html)
+
+]
+
+
+---
+###<font color =#4C5455><code> Simulation Study: __pair selection__ </code></font>
+
+Performance of the Bayesian method in correctly rejecting false positives.
+
+```{r, echo=FALSE}
+library(knitr)
+library(kableExtra)
+
+# Criando o dataframe com os dados
+tabela <- data.frame(
+  Beta = c(rep(" ", 3), rep(" ", 3), rep(" ", 3), rep(" ", 3), rep(" ", 3), rep(" ", 3)),
+  Metric = rep(c("False Positives", "Correctly Rejected", "Proportion"), 6),
+  `w500` = c(73,43,0.59, 73,44,0.60, 76,43,0.57, 71,41,0.58, 75,45,0.60, 368,216,0.587),
+  `w252` = c(36,17,0.47, 36,19,0.53, 33,16,0.48, 37,20,0.54, 35,17,0.49, 177,89,0.503),
+  `w180` = c(70,70,1.00, 70,70,1.00, 70,70,1.00, 70,70,1.00, 72,72,1.00, 352,352,1.00),
+  `w120` = c(71,70,0.99, 72,72,1.00, 72,72,1.00, 71,70,0.99, 71,70,0.99, 357,354,0.99),
+  `w90`  = c(52,35,0.67, 34,17,0.50, 68,17,0.25, 37,18,0.49, 17,0,0.00, 208,87,0.418),
+  `w60`  = c(0,0,"-", 2,1,0.50, 0,0,"-", 1,0,0.00, 0,0,"-", 3,1,0.33),
+  Total = c(302,235,0.78, 287,223,0.78, 319,218,0.68, 287,219,0.76, 270,204,0.76, 1465,1099,0.75)
+)
+
+# Gerando a tabela bonita em HTML com paginação
+tabela %>%
+  kable("html", digits = 1#, 
+        #caption = "Performance of the Bayesian method in correctly rejecting false positives."
+        ) %>%
+  kable_styling("striped", full_width = F, position = "center") %>%
+  pack_rows("β₁ = 0.50", 1, 3) %>%
+  pack_rows("β₁ = 0.75", 4, 6) %>%
+  pack_rows("β₁ = 1.00", 7, 9) %>%
+  pack_rows("β₁ = 1.25", 10, 12) %>%
+  pack_rows("β₁ = 1.50", 13, 15) %>%
+  pack_rows("Overall Totals", 16, 18) %>%
+  scroll_box(height = "400px")
+```
+
+
+
+
+---
+class: gray-slide, inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Conclusion
+
+
+---
+###<font color =#4C5455><code> Conclusion: __general remarks & future research__ </code></font>
+
+</br>
+
+.pull-left[
+
+> Better performance
+
+> New family of distribution-based strategies 
+
+> Superior risk-return metrics
+
+> More refined tool for pair selection $\to$ applicability beyond pairs trading 
+    
+
+]
+
+.pull-right[
+
+> __Limitations__ <br>
+  > + Parameter sensitivities $(w$, $\alpha$, L, U) <br>
+  > + Transaction costs 
+
+> __Future research__ <br> 
+  > + broader range of markets and asset classes <br>
+  > + different parameter configurations <br>
+  > + incorporating transaction costs
+
+]
+
+
+
+---
+class: inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Thank you!<br>
+allanvcq@gmail.com

@@ -1,0 +1,39 @@
+# Instalar e carregar os pacotes necessários (se ainda não estiverem instalados)
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(truncnorm)) install.packages("truncnorm")
+library(ggplot2)
+library(truncnorm)
+
+# Definir os parâmetros da distribuição normal truncada
+mean1 <- 1.5
+sd <- 1
+
+# Criar uma sequência de valores para o eixo x (de 0 em diante, pois é truncada)
+betas <- seq(0, 6, length = 100)
+q <- quantile(betas, c(0.05, 0.60))
+
+# Calcular as densidades das distribuições normais truncadas para cada valor de x
+y1 <- dtruncnorm(betas, a = 0, mean = mean1, sd = sd)
+df <- data.frame(betas, y1)
+
+# Plotar usando ggplot2
+ggplot(df, aes(x = betas, y = y1)) +
+  # Preencher a área sob a curva com uma cor azul suave
+  geom_area(fill = rgb(0, 0, 1, alpha = 0.2)) +
+  # Adicionar a curva de densidade com linha cinza
+  geom_line(color = "gray", size = 1) +
+  # Adicionar as linhas verticais para os quantis
+  geom_vline(xintercept = q, color = "#228b22", linetype = "dashed") +
+  # Adicionar a linha vertical para a média
+  geom_vline(xintercept = mean1, color = "#4a90e2") +
+  # Títulos e rótulos
+  labs(title = expression("Full-conditional of " ~ beta[1]),
+       x = expression(beta[1]), 
+       y = "Density") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),   # Centralizar o título
+    panel.border = element_blank(),           # Remover a borda do gráfico
+    axis.line = element_line(color = "black"), # Linha do eixo preto
+    panel.grid = element_blank()              # Remover as linhas de grade
+  )

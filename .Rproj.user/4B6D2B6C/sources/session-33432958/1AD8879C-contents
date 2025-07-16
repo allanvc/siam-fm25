@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Commodity Pairs</title>
+    <style>
+        body {
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 90%;
+            max-width: 1500px;
+            margin: auto;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Ativos comdty-fut -->
+        <img src="ZS=F_ZL=F_U2_w90.png" alt="ZS=F_ZL=F">
+        <img src="ZC=F_ZW=F_U2_w90.png" alt="ZC=F_ZW=F">
+        <img src="HG=F_SI=F_U2_w90.png" alt="HG=F_SI=F">
+        <img src="HG=F_GC=F_U2_w90.png" alt="HG=F_GC=F">
+        <img src="GC=F_SI=F_U2_w90.png" alt="GC=F_SI=F">
+        
+        <!-- Ativos comdty-etfs -->
+        <img src="PBD_TAN_U2_w90.png" alt="PBD_TAN">
+        <img src="PBD_FAN_U2_w90.png" alt="PBD_FAN">
+        <img src="SLV_GLD_U2_w90.png" alt="SLV_GLD">
+        <img src="REMX_LIT_U2_w90.png" alt="REMX_LIT">
+        <img src="GLD_IAU_U2_w90.png" alt="GLD_IAU">
+        <img src="USCI_DBC_U2_w90.png" alt="USCI_DBC">
+    </div>
+</body>
+</html>

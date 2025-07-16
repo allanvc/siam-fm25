@@ -1,0 +1,62 @@
+library(plotly)
+library(dplyr)
+
+# Parâmetros e dados simulados
+total_days <- 100
+forming_days <- 50   # Período de "Forming" 10x maior
+decision_days <- 5
+trading_days <- 5
+
+set.seed(123)
+dates <- seq.Date(as.Date("2023-01-01"), by = "days", length.out = total_days)
+price <- cumsum(rnorm(total_days))
+data <- data.frame(Date = dates, Price = price)
+
+# Função para gerar dados de pontos para cada frame
+generate_points <- function(i, dates, price, forming_days, decision_days, trading_days) {
+  start_date <- dates[i]
+  data.frame(
+    Frame = rep(i, 3),
+    Period = c("Forming", "Decision", "Trading"),
+    Date = c(start_date, start_date + forming_days, start_date + forming_days + decision_days),
+    Price = rep(price[i], 3)  # Manter o mesmo valor de preço para os três períodos
+  )
+}
+
+# Gerar dados para todos os frames
+frames_data <- bind_rows(lapply(1:(total_days - forming_days - decision_days - trading_days), function(i) {
+  generate_points(i, dates, price, forming_days, decision_days, trading_days)
+}))
+
+# Gráfico com animação configurada usando pontos
+fig <- plot_ly() %>%
+  add_trace(data = data, x = ~Date, y = ~Price, type = 'scatter', mode = 'lines', name = "Preço") %>%
+  add_trace(
+    data = frames_data,
+    x = ~Date, y = ~Price, frame = ~Frame, type = 'scatter', mode = 'markers',
+    color = ~Period, showlegend = TRUE, marker = list(size = 10, opacity = 0.7)
+  ) %>%
+  layout(
+    title = "Movimento da Janela Deslizante com Pontos de Períodos",
+    xaxis = list(title = "Data"),
+    yaxis = list(title = "Preço"),
+    updatemenus = list(
+      list(
+        type = "buttons",
+        showactive = TRUE,
+        buttons = list(
+          list(
+            label = "Play",
+            method = "animate",
+            args = list(NULL, list(frame = list(duration = 200, redraw = TRUE), transition = list(duration = 0)))
+          )
+        )
+      )
+    )
+  ) %>%
+  animation_opts(
+    frame = 200,
+    transition = 0
+  )
+
+fig

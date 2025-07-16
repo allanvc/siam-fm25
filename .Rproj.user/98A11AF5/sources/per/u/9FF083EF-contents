@@ -1,0 +1,154 @@
+<!-- ###<font color =#4C5455><code>What is (statistical) arbitrage?</code></font> -->
+  
+  <!-- <!-- ??? Pairs trading is a type of statistical arbitrage. So we need to rewinf a little bit and understand what is statistical arbitrage. and to understand what is statistical arbitrage, we need to first understand what is arbitrage -->
+  
+  <!-- <br> -->
+  
+  <!-- > __Arbitrage__ <br><br> Take advantage of price differences in different markets for the same or different assets -->
+  
+  <!-- <!-- ??? comecar pelo exemplo -->
+  
+  <!-- <br> -->
+  <!-- <br> -->
+  
+  <!-- > __Statistical arbitrage__ <br><br> When we use stats to do arbitrage -->
+  
+  
+  <!-- <!-- ??? we can use stats to identify assets, markets and the best time to trade with stats -->
+  
+  
+  <!-- --- -->
+  <!-- class: highlight-last-item -->
+  
+  
+  <!-- ### <code>__Pairs trading:__ <font color =#4C5455>what is it?</font></code> -->
+  
+  <!-- TIRAR ESSE E FALAR TD ISSO NOS PROXIMOS GRAFICOS -->
+  <!-- </br> -->
+  <!-- </br> -->
+  <!-- </br> -->
+  <!-- -- -->
+  <!-- + Exploits temporary mispricings between two assets that historically __move together__. -->
+  
+  <!-- </br> -->
+  <!-- -- -->
+  <!-- + When the pair deviates from its historical norm, investors __`BUY`__ (take a __long__ position in) the undervalued asset and __`SELL`__ (take a __short__ position in) the overvalued one, expecting a reversion of this spread to its historical average or levels. -->
+  
+  <!-- </br> -->
+  <!-- -- -->
+  <!-- + Its main appeal lies in producing a __low-volatility__ and __market-neutral__ investment strategy. -->
+  
+  
+  
+  
+  
+  <!-- pode ser bonds, contracts, options, stocks etc -->
+  
+  <!-- </br> -->
+  <!-- -- -->
+  <!-- + It was first employed by a quantitative group at Morgan Stanley in the 1980s -->
+  
+  <!-- </br> -->
+  <!-- -- -->
+  <!-- + It belongs to a broader class of investment strategy called statistical arbitrage - statistical modeling of price relationships among different assets to generate excess returns -->
+  
+  
+  
+  
+  
+  ===============================
+    ---
+    ###<font color =#4C5455><code>Cointegration strategy: __trading__</code></font>
+    
+    TIRAR ESSE E FALAR TD ISSO SOMENTE MOSTRANDO GRAFICOS
+  
+  > Trading signals are generated based on the standard deviations of the spread $\hat{y_t} - \hat{\beta_1} x_t$
+    
+    .pull-left[
+      
+      <br>
+        <br>
+        
+        > __Positions:__ whenever the Z-score $> \mid \pm k\sigma \mid$ thresholds
+      
+      > __Sizing:__ go long (or short) $\hat{\beta_1}$ dollars of stock $X$ for each dollar of stock $Y$ __ $^{(**)}$ __
+      
+      > __Take-profit:__ when Z-score reverts back to `0` - the long-term average.
+      
+      > __Stop-loss:__ when the Z-score reaches a defined loss margin ( $\pm|k\sigma + \xi|$ ).
+      
+    ]
+  
+  
+  .pull-right[
+    
+    ```{r, fig.height=6, fig.width=7, fig.align='center', fig.retina=4}
+    # fig.retina melhora a resolucao do plot
+    # ```{r, fig.height=6, fig.width=10, fig.align='center', fig.retina=4}
+    library(dplyr)
+    library(quantmod)
+    library(ggplot2)
+    library(gridExtra)
+    
+    # Definir o período de coleta de dados
+    start_date <- as.Date("2023-06-01")
+    end_date <- Sys.Date()
+    
+    # Obter os dados do Yahoo Finance
+    tickers <- c("KO", "PEP")
+    
+    KO <- getSymbols(tickers[1], src = "yahoo", from = start_date, to = end_date, verbose = FALSE, auto.assign = FALSE)
+    
+    PEP <- getSymbols(tickers[2], src = "yahoo", from = start_date, to = end_date, verbose = FALSE, auto.assign = FALSE)
+    
+    # Extrair os preços de fechamento e calcular o log dos preços
+    KO_log_prices <- log(Cl(KO))
+    PEP_log_prices <- log(Cl(PEP))
+    
+    # Criar um dataframe com os preços em log
+    prices_df <- data.frame(
+      Date = index(KO_log_prices),
+      KO = as.numeric(KO_log_prices),
+      PEP = as.numeric(PEP_log_prices - 0.6)
+    )
+    
+    mod <- lm(KO ~ PEP, data = prices_df)
+    
+    # Calcular o spread entre os preços em log e o z-score
+    prices_df <- prices_df %>%
+      mutate(
+        Spread = KO - KO - (coef(mod)[2] * PEP),
+        Zscore = (Spread - mean(Spread)) / sd(Spread)
+      )
+    
+    # Gráfico 1: Preços históricos em log de KO e PEP com legenda abaixo
+    p1 <- ggplot(prices_df, aes(x = Date)) +
+      geom_line(aes(y = KO, color = "KO"), size = 0.6) +
+      geom_line(aes(y = PEP, color = "PEP"), size = 0.6) +
+      scale_color_manual(values = c("KO" = "#00aca0", "PEP" = "gray")) +
+      labs(title = "Pair: KO vs. PEP", y = "Log Price", x = NULL) +
+      theme_minimal() +
+      theme(
+        legend.title = element_blank(),
+        legend.position = "bottom"  # Posiciona a legenda na parte inferior
+      )
+    
+    # Gráfico 2: Z-score do spread com linhas em -2 e +2 desvios padrão
+    # Gráfico 2: Z-score do spread com linhas em -2 e +2 desvios padrão e novas cores
+    p2 <- ggplot(prices_df, aes(x = Date, y = Zscore)) +
+      geom_line(color = "black", size = 0.6) +  # Azul suave
+      geom_hline(yintercept = c(-2, 2), linetype = "dashed", color = "darkgray") +  # Verde escuro
+      geom_hline(yintercept = c(-3, 0, 3), linetype = "dashed", color = "#4a90e2") +  # Azul suave
+      labs(title = "Z-score of Spread", y = "Z-score", x = "Date") +
+      theme_minimal()
+    
+    # Combinar os gráficos
+    grid.arrange(p1, p2, ncol = 1, heights = c(2, 1))
+    
+    
+    ```
+    
+    
+  ]    
+    
+    

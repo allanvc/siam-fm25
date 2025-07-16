@@ -1,0 +1,33 @@
+library(plotly)
+library(dplyr)
+
+# Criar dados de exemplo
+set.seed(42)
+n <- 100
+data <- data.frame(
+  Product = rep(LETTERS[1:5], each = n / 5),
+  Sales = runif(n, 100, 300),
+  Price = runif(n, 20, 150),
+  Region = sample(c("North", "South", "East", "West"), n, replace = TRUE)
+)
+
+# Definindo uma função para calcular Z com base no tipo de produto
+data <- data %>%
+  mutate(Z = case_when(
+    Product == "A" ~ Sales + 6 * Price^2,          # Produto A (Dourado)
+    Product == "B" ~ Sales + 2.3 * Price^2,      # Produto B (Azul Dodger)
+    Product == "C" ~ Sales * 1.2 + Price * 1.5,  # Produto C (Verde Limão)
+    Product == "D" ~ Sales * 1.5 + Price * 2,    # Produto D (Laranja Vermelho)
+    Product == "E" ~ Sales + 4 * Price^2  # Produto E (Roxo)
+  ))
+
+# Criar scatter plot 3D com produtos separados
+p3d <- plot_ly(data, x = ~Price, y = ~Sales, z = ~Z, 
+               color = ~Product, colors = c("#FFD700", "#1E90FF", "#32CD32", "#FF4500", "#800080"), 
+               text = ~Product, marker = list(size = 5, opacity = 0.6)) %>%
+  layout(scene = list(xaxis = list(title = "Price"),
+                      yaxis = list(title = "Sales"),
+                      zaxis = list(title = "Sales Volume")),
+         title = "3D Scatter Plot of Sales Data with Distinct Products")
+
+p3d

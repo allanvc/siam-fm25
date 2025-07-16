@@ -1,0 +1,9 @@
+set.seed(1984)
+betas <- rnorm(1000, 3.5, 0.4)
+q <- quantile(betas, c(0.01, 0.99))
+plot(density(betas),
+     xlab = "betas", ylab = "density",
+     main = "Full-conditional of " ~ beta,
+     bty = 'n')
+abline(v = q, col=c("blue", "blue"), lty=2)
+abline(v = 3.5, col=c("red", "blue"))

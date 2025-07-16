@@ -1,0 +1,737 @@
+---
+title: "Statistical methods with applications to pairs trading and equipment life-time modeling"
+#subtitle: "<s> How to make money in financial markets using stats </s>"
+author: "Allan Quadros"
+date: "Ph.D. Candidate | Statistics </br> Kansas State University </br> `r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    # self_contained: true
+    # pandoc_args: --wrap=preserve
+    lib_dir: libs
+    css: ["./css/holycross.css", "./css/holycross-fonts.css", "styles.css"]
+    nature:
+      beforeInit: ["./js/midd_xaringan.js"]
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+    includes:
+      in_header: "./libs/partials/header.html"
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+layout: true
+background-image: url(./img/logo/logo2.png)
+background-position: 0% 100%
+background-size: 5%
+
+	
+```{css echo=FALSE}
+.highlight-last-item > ul > li,
+.highlight-last-item > ol > li {
+  opacity: 0.5;
+}
+.highlight-last-item > ul > li:last-of-type,
+.highlight-last-item > ol > li:last-of-type {
+  opacity: 1;
+}
+```
+
+
+---
+## Table of contents
+
+<!-- <br> -->
+
+<!-- > Objectives -->
+
+<br>
+<br>
+
+> (1) Introduction <br><br>
+
+> (2) Introduction to Pairs Trading Part <br>
+
+> + (2.1) Bayesian Method <br>
+
+> + (2.2) Non-Overlapping Blocks Bootstrap <br><br>
+
+> (3) Introduction to Reliability Part <br>
+
+> + (2.1) Bayesian Hierarchical Modeling for Predicting Equipment Life-cycle in the Absence of Data <br><br>
+
+> (4) Conclusion <br><br>
+
+
+---
+class: inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Introduction to Pairs Trading
+
+---
+
+</br>
+</br>
+
+###<font color =#4C5455><code>What is (statistical) arbitrage?</code></font>
+
+<!-- ??? Pairs trading is a type of statistical arbitrage. So we need to rewinf a little bit and understand what is statistical arbitrage. and to understand what is statistical arbitrage, we need to first understand what is arbitrage -->
+
+<br>
+
+> __Arbitrage__ <br><br> Take advantage of price differences in different markets for the same or different assets
+
+<!-- ??? comecar pelo exemplo -->
+
+<br>
+<br>
+
+> __Statistical arbitrage__ <br><br> When we use stats to do arbitrage
+
+
+<!-- ??? we can use stats to identify assets, markets and the best time to trade with stats -->
+
+
+
+---
+class: highlight-last-item
+
+
+### <code>__Pairs trading:__ <font color =#4C5455>what is it?</font></code>
+
+</br>
+</br>
+</br>
+--
++ Pairs trading is a investment strategy that exploits
+temporary mispricings between two assets that historically __move together__.
+
+</br>
+--
++ When the pair deviates from its historical norm, investors __`BUY`__ (take a __long__ position in) the undervalued asset and __`SELL`__ (take a __short__ position in) the overvalued one, expecting a reversion of this spread to its historical average or levels.
+
+</br>
+--
++ Its main appeal lies in producing a __low-volatility__ and __market-neutral__ investment strategy.
+
+<!-- pode ser bonds, contracts, options, stocks etc -->
+
+<!-- </br> -->
+<!-- -- -->
+<!-- + It was first employed by a quantitative group at Morgan Stanley in the 1980s -->
+
+<!-- </br> -->
+<!-- -- -->
+<!-- + It belongs to a broader class of investment strategy called statistical arbitrage - statistical modeling of price relationships among different assets to generate excess returns -->
+
+
+
+---
+###<font color =#4C5455><code>Example of co-moving assets: __Coca-Cola vs. Pepsi__</code></font>
+
+
+```{r, message=FALSE, results='asis'}
+library(plotly)
+fig <- readRDS("plotly_LS2.rds")
+fig
+```
+
+
+---
+###<font color =#4C5455><code>__Pairs trading__: how to make money from it?</code></font>
+
+
+```{r, fig.height=6, fig.width=10, fig.align='center', fig.retina=4}
+# Carregar as bibliotecas necessárias
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Definir os dados
+x <- c(5.3, 5.4, 6, 7.2, 6.7, 5.5, 5.6)
+y <- c(2.7, 2.8, 3.5, 2.5, 3.1, 3.6, 3.9)
+dates <- as.Date(1:7, origin = "2023-01-01")  # Criar datas comuns
+
+# Criar um data frame
+df <- data.frame(dates, stock_X = x, stock_Y = y)
+
+# Transformar para formato longo para ggplot2
+df_long <- df %>%
+  pivot_longer(cols = c(stock_X, stock_Y), names_to = "stock", values_to = "values")
+
+# Criar o gráfico usando ggplot2
+ggplot(df_long, aes(x = dates, y = values, color = stock, 
+                    # linetype = stock
+                    )) +
+  geom_line(size = 1.2) +
+  scale_color_manual(values = c("#602d89", "gray")) + # Define cores para cada série
+  # scale_linetype_manual(values = c("solid", "dashed")) + # Define tipos de linha
+  ylim(2, 8) +  # Limites do eixo y
+  labs(title = "Pairs Trading Mechanism", x = "Date", y = "Values") +
+  theme_minimal() +  # Tema minimalista
+  theme(
+    legend.position = "none",  # Remover a legenda
+    plot.title = element_text(hjust = 0, vjust = 1, size = 12),  # Alinhar título à esquerda
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)  # Ajustar margens
+  ) +
+  # Adicionar o intervalo de datas no canto superior direito
+  annotate("text", x = as.Date("2023-01-08"), y = 8.0, 
+           label = "2023-01-02 / 2023-01-08", 
+           hjust = 1, size = 3, color = "black") +
+  # Adicionar anotações
+  annotate("text", x = as.Date("2023-01-04"), y = 7.4, label = "Open\nshort position", size = 3.5, color = "black") +
+  annotate("text", x = as.Date("2023-01-04"), y = 2.3, label = "Open\nlong position", size = 3.5, color = "black") +
+  annotate("text", x = as.Date("2023-01-06"), y = 4.7, label = "Rewind\npositions", size = 3.5, color = "black")
+
+```
+
+
+---
+class: highlight-last-item
+###<font color =#4C5455><code>__Pairs trading__: what are the main challenges?</code></font>
+
+<br>
+<br>
+
+> 1. __Identifying pairs__ of securities that exhibit a __stable relationship__ in the desired time frame. <br><br>
+
+> 2. Optimal __share allocation__ between the two assets to appropriately hedge against market volatility. <br><br>
+    
+> 3. Generating __accurate trading signals__ to precisely time the entry and exit points. <br><br>
+
+
+---
+class: highlight-last-item
+###<font color =#4C5455><code>__Pairs trading__: main adopted strategies</code></font>
+
+<br>
+<br>
+
+
+> Distance Method;
+
+> __Cointegration__;
+
+> Copulas;
+
+> Ornstein-Uhlenbeck;
+
+> Machine Learning;
+
+> Others.
+
+
+
+---
+###<font color =#4C5455><code>Cointegration strategy: __pair selection__</code></font>
+
+
+<code> Cointegration test - a two step procedure designed by Engle & Granger (1987): </code> <br>
+
+
+--
+> __One:__ Select two stocks, say $X$ and $Y$, that historically __move together__ and test if the two price series ($y_t$ and $x_t$) are __non-stationary__, i.e. both series have an unit root $\gamma = 0$; <br><br>
+
+
+--
+> __Two:__ Fit a linear model $\hat{y_t} = \hat{\beta_0} + \hat{\beta_1} x_t$, and test the __residuals__ ($e_t$) for stationarity, i.e., $e_t$ does not have an unit root $\gamma < 0$.
+
+
+<!-- ??? where $I(1)$ denotes an integrated process of order 1, meaning that the series becomes stationary only after taking the first difference. -->
+
+<br>
+
+--
++ If __`(1)`__ and __`(2)`__ hold, then the series are said to be __cointegrated__ - stocks $X$ and $Y$ share a __long-term equilibrium relationship__.
+
+
+
+---
+###<font color =#4C5455><code>Cointegration strategy: __trading__</code></font>
+
+> Trading signals are generated based on the standard deviations of the spread $\hat{y_t} - \hat{\beta_1} x_t$
+
+.pull-left[
+
+
+> __Positions__ are taken whenever the standardized spread crosses the $\pm k\sigma$ thresholds, going long (or short) $\hat{\beta_1}$ dollars of stock $X$ for each dollar of stock $Y$.
+
+> __Take-profit__ signals are emitted when the Z-score reverts back to `0` - the long-term average.
+
+> __Stop-loss__ triggers are activated when the Z-score reaches a defined loss margin $\xi$ from the entry point ($\pm|k\sigma + \xi|$).
+
+]
+
+
+.pull-right[
+
+```{r, fig.height=6, fig.width=7, fig.align='center', fig.retina=4}
+# fig.retina melhora a resolucao do plot
+# ```{r, fig.height=6, fig.width=10, fig.align='center', fig.retina=4}
+library(dplyr)
+library(quantmod)
+library(ggplot2)
+library(gridExtra)
+
+# Definir o período de coleta de dados
+start_date <- as.Date("2023-06-01")
+end_date <- Sys.Date()
+
+# Obter os dados do Yahoo Finance
+tickers <- c("KO", "PEP")
+
+KO <- getSymbols(tickers[1], src = "yahoo", from = start_date, to = end_date, verbose = FALSE, auto.assign = FALSE)
+
+PEP <- getSymbols(tickers[2], src = "yahoo", from = start_date, to = end_date, verbose = FALSE, auto.assign = FALSE)
+
+# Extrair os preços de fechamento e calcular o log dos preços
+KO_log_prices <- log(Cl(KO))
+PEP_log_prices <- log(Cl(PEP))
+
+# Criar um dataframe com os preços em log
+prices_df <- data.frame(
+  Date = index(KO_log_prices),
+  KO = as.numeric(KO_log_prices),
+  PEP = as.numeric(PEP_log_prices - 0.6)
+)
+
+mod <- lm(KO ~ PEP, data = prices_df)
+
+# Calcular o spread entre os preços em log e o z-score
+prices_df <- prices_df %>%
+  mutate(
+    Spread = KO - KO - (coef(mod)[2] * PEP),
+    Zscore = (Spread - mean(Spread)) / sd(Spread)
+  )
+
+# Gráfico 1: Preços históricos em log de KO e PEP com legenda abaixo
+p1 <- ggplot(prices_df, aes(x = Date)) +
+  geom_line(aes(y = KO, color = "KO"), size = 0.6) +
+  geom_line(aes(y = PEP, color = "PEP"), size = 0.6) +
+  scale_color_manual(values = c("KO" = "#602d89", "PEP" = "gray")) +
+  labs(title = "Pair: KO vs. PEP", y = "Log Price", x = NULL) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom"  # Posiciona a legenda na parte inferior
+  )
+
+# Gráfico 2: Z-score do spread com linhas em -2 e +2 desvios padrão
+# Gráfico 2: Z-score do spread com linhas em -2 e +2 desvios padrão e novas cores
+p2 <- ggplot(prices_df, aes(x = Date, y = Zscore)) +
+  geom_line(color = "black", size = 0.6) +  # Azul suave
+  geom_hline(yintercept = c(-2, 2), linetype = "dashed", color = "darkgray") +  # Verde escuro
+  geom_hline(yintercept = c(-3, 0, 3), linetype = "dashed", color = "#4a90e2") +  # Azul suave
+  labs(title = "Z-score of Spread", y = "Z-score", x = "Date") +
+  theme_minimal()
+
+# Combinar os gráficos
+grid.arrange(p1, p2, ncol = 1, heights = c(2, 1))
+
+
+```
+
+
+]
+
+<!-- ??? LEGAL: O alpha nao precisa entrar no calculo justamente pelo motivo do qual eu distorci o primeiro grafico com log(PEP) - c. Sem o c, o efeito seria o mesmo, ou sejam nao interessa a distancia absoluta entre KO e PEP - o que interesse eh o desvio relativo entre ambas e nao o desvio total considerando o nivel inicial. Alem do fato de que ao icnluirmos alpha, teremos mais uma variavel para estimar tornando o modelo mais complexo e prone to more errors and overfitting-->
+
+
+<!-- ??? falar do zscore e mostrar o grafico 2 (mudar as cores - usar o codigo do palomar) - falar sobre transformar as duas series em um ativo sintetico -->
+
+
+---
+class: inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## First Proposed Method: Bayesian
+
+
+
+---
+###<font color =#4C5455><code> Proposed method: __motivation__ </code></font>
+
+
+<code> Problems with the standard cointegration method: </code></br></br>
+
+
+--
+> High false positive rates when used within a data mining approach;</br></br>
+
+--
+> Has been widely adopted by both institutional and individual investors;</br></br>
+
+--
+> Can result in premature/delayed exits.
+
+<!-- ??? alpha level is inflated -->
+
+<!-- ??? less opportunities - the margins have shrunk -->
+
+<!-- ??? practically speaking, relying only on the zscore of the spread is not very effective -- sometimes the relationship between the securities changes and the zscore does not capture that. Soetimes, it is too sensitive. -->
+
+<!-- ??? Competes against high frequency trading to identify distortions ? -->
+
+---
+###<font color =#4C5455><code> Proposed method: __hypotheses__ </code></font>
+
+> __Idea:__ $\hat{\beta_1}$ carries important information about the linear relationship between the underlying __co-moving__ securities.</br></br>
+
+--
+> __Proposal:__ Add a __confirmation layer__ to the standard cointegration strategy in pairs trading by evaluating the behavior of the __hedge ratio__ $\hat{\beta_1}$.</br></br>
+
+--
+> __How:__ Deriving the __full-conditional distribution__ of $\beta_1$ from OLS regression through a __hierarchical Bayesian model__, and establishing two thresholds within this distribution that will serve as control/confirmation boundaries for the trading strategy.
+
+--
+.pull-left[
+```{r, fig.height=3, fig.width=6, fig.align='center', fig.retina=4, results='hold'}
+
+# set.seed(1984)
+# betas <- rnorm(1000, 2.5, 0.4)
+# q <- quantile(betas, c(0.01, 0.99))
+# plot(density(betas),
+#      xlab = "betas", ylab = "density",
+#      main = "Full-conditional of " ~ beta[1],
+#      bty = 'n')
+# abline(v = q, col=c("#4a90e2", "#4a90e2"), lty=2)
+# abline(v = 2.5, col="#228b22")
+
+# ------------
+# Instalar e carregar os pacotes necessários (se ainda não estiverem instalados)
+# if (!require(ggplot2)) install.packages("ggplot2")
+# if (!require(truncnorm)) install.packages("truncnorm")
+library(ggplot2)
+library(truncnorm)
+
+# Definir os parâmetros da distribuição normal truncada
+mean1 <- 1.5
+sd <- 1
+
+# Criar uma sequência de valores para o eixo x (de 0 em diante, pois é truncada)
+betas <- seq(0, 6, length = 100)
+q <- quantile(betas[betas>0], c(0.02, 0.80))
+
+# Calcular as densidades das distribuições normais truncadas para cada valor de x
+y1 <- dtruncnorm(betas, a = 0, mean = mean1, sd = sd)
+df <- data.frame(betas, y1)
+
+# Plotar usando ggplot2
+ggplot(df, aes(x = betas, y = y1)) +
+  # Preencher a área sob a curva com uma cor azul suave
+  geom_area(fill = rgb(0, 0, 1, alpha = 0.2)) +
+  # Adicionar a curva de densidade com linha cinza
+  geom_line(color = "gray", size = 1) +
+  # Adicionar as linhas verticais para os quantis
+  geom_vline(xintercept = q, color = "#228b22", linetype = "dashed") +
+  # Adicionar a linha vertical para a média
+  geom_vline(xintercept = mean1, color = "#4a90e2") +
+  # Títulos e rótulos
+  labs(title = expression("Full-conditional of " ~ beta[1]),
+       x = expression(beta[1]), 
+       y = "Density") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),   # Centralizar o título
+    panel.border = element_blank(),           # Remover a borda do gráfico
+    axis.line = element_line(color = "black"), # Linha do eixo preto
+    panel.grid = element_blank()              # Remover as linhas de grade
+  )
+
+```
+
+]
+
+--
+.pull-right[
+<code> __Hypotheses:__  </code>
+  
+  > __(i)__ produces more accurate trading signals;
+  
+  > __(ii)__ increases false discovery rates (FDR) in cointegration test. 
+
+]
+
+
+
+---
+###<font color =#4C5455><code> Theoretical Background: __hierarchical Bayesian model__ </code></font>
+
+<code> Using results from Gelfand _et al._ (1992), Hooten & Hefley (2019), and Rencher (2007), we have: </code>
+
+--
+<code> __Likelihood:__ </code>
+
+.my-style2[
+> $$y_i \sim \mathcal{N}(\boldsymbol{X\beta}, \sigma^2)$$
+
+]
+
+.my-style[
+where $\boldsymbol{\beta} = \begin{bmatrix} \beta_0 & \beta_1 \end{bmatrix}^\top$
+]
+
+
+--
+<code> __Priors:__ </code>
+.my-style2[
+> $$\boldsymbol{\beta} \sim \mathcal{TN}(\boldsymbol{\mu_{\beta}} = \mathbf{(X'X)^{-1}X'y}, \boldsymbol{\Sigma_{\beta}} = \sigma_0^2 \mathbf{(X'X)^{-1}}, \phantom{.}0, \infty)$$ 
+
+]
+
+.my-style[
+where $\widehat{\sigma_0^2} = \frac{1}{n-2}\boldsymbol{y'(I - H)y}$ and $\boldsymbol{H = X(X'X)^{-1}X'}$
+
+]
+
+.my-style2[
+>  $$\sigma^2 \sim \mathcal{IG}(q, r)$$
+
+]
+
+
+--
+<code> __Conjugate full-conditional posteriors:__ </code>
+.my-style2[
+> $$\boldsymbol{\beta} \mid \boldsymbol{y}, \sigma^2 \equiv \mathcal{TN}_{\beta_1 > 0}^{\infty}(\boldsymbol{\mu} = \boldsymbol{A^{-1}b}, \boldsymbol{\Sigma} = \boldsymbol{A^{-1}})$$
+
+]
+
+.my-style[
+where $\boldsymbol{A} \equiv \boldsymbol{X}^\top (\sigma^2\boldsymbol{I})^{-1} \boldsymbol{X} + \boldsymbol{\Sigma_\beta}^{-1}$ and $\boldsymbol{b} \equiv \boldsymbol{X}^\top (\sigma^2\boldsymbol{I})^{-1} \boldsymbol{y} + \boldsymbol{\Sigma_\beta}^{-1} \boldsymbol{\mu_\beta}$
+]
+
+.my-style2[
+> $$\sigma^2 \mid \boldsymbol{y, \beta} \equiv \mathcal{IG}(\tilde q, \tilde r)$$
+
+]
+
+.my-style[
+where $\tilde q = q + \frac{n}{2}$ and $\tilde r = \left[\frac{1}{2}\boldsymbol{(y - X\beta)'(y - X\beta)} + \frac{1}{r}\right]^{-1}$
+]
+
+---
+class: inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Results for the Bayesian Method
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __data & methodology__ </code></font>
+
+<br>
+<br>
+
+--
+> Yahoo finance data, 30-minute timeframe; <br><br>
+
+--
+> 2 years of data: __`02-01-2023 - 01-31-2025`__; <br><br>
+
+--
+> Backtest consisted of sliding window with 3 periods: forming `[t-1]` | decision `[t]` | trading `[t+1]`. <br><br>
+
+--
+> Parameters: sizes $w \in \{65, 130\}$ and quantile parameter $\alpha \in \{0.05, 0.15\}$
+
+--
+> The algorithm was implemented in R
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __backtesting__ </code></font>
+
+<iframe src="animated_z_score_with_spike_and_stabilization6.html" width="750" height="520" style="border:none;"></iframe>
+
+<!-- ```{r} -->
+<!-- # Carrega o arquivo HTML contendo a animação Plotly -->
+<!-- htmltools::includeHTML("animated_z_score_with_spike_and_stabilization6.html") -->
+<!-- ``` -->
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __U.S.__ </code></font>
+
+<br>
+<br>
+<br>
+
+.center[
+
+[__LINK__](./results/US2.html)
+
+<!-- <iframe src="./results/US2.html" width="800" height="600" style="border:none;"></iframe> -->
+
+]
+
+
+
+---
+###<font color =#4C5455><code> Empirical Results: __Brazil__ </code></font>
+
+
+<br>
+<br>
+<br>
+
+.center[
+
+[__LINK__](./results/Brazil2.html)
+
+]
+
+
+---
+###<font color =#4C5455><code> Simulation Study: __pair selection__ </code></font>
+
+Performance of the Bayesian method in correctly rejecting false positives.
+
+```{r, echo=FALSE}
+library(knitr)
+library(kableExtra)
+
+# Criando o dataframe com os dados
+tabela <- data.frame(
+  Beta = c(rep(" ", 3), rep(" ", 3), rep(" ", 3), rep(" ", 3), rep(" ", 3), rep(" ", 3)),
+  Metric = rep(c("False Positives", "Correctly Rejected", "Proportion"), 6),
+  `w500` = c(73,43,0.59, 73,44,0.60, 76,43,0.57, 71,41,0.58, 75,45,0.60, 368,216,0.587),
+  `w252` = c(36,17,0.47, 36,19,0.53, 33,16,0.48, 37,20,0.54, 35,17,0.49, 177,89,0.503),
+  `w180` = c(70,70,1.00, 70,70,1.00, 70,70,1.00, 70,70,1.00, 72,72,1.00, 352,352,1.00),
+  `w120` = c(71,70,0.99, 72,72,1.00, 72,72,1.00, 71,70,0.99, 71,70,0.99, 357,354,0.99),
+  `w90`  = c(52,35,0.67, 34,17,0.50, 68,17,0.25, 37,18,0.49, 17,0,0.00, 208,87,0.418),
+  `w60`  = c(0,0,"-", 2,1,0.50, 0,0,"-", 1,0,0.00, 0,0,"-", 3,1,0.33),
+  Total = c(302,235,0.78, 287,223,0.78, 319,218,0.68, 287,219,0.76, 270,204,0.76, 1465,1099,0.75)
+)
+
+# Gerando a tabela bonita em HTML com paginação
+tabela %>%
+  kable("html", digits = 1#, 
+        #caption = "Performance of the Bayesian method in correctly rejecting false positives."
+        ) %>%
+  kable_styling("striped", full_width = F, position = "center") %>%
+  pack_rows("β₁ = 0.50", 1, 3) %>%
+  pack_rows("β₁ = 0.75", 4, 6) %>%
+  pack_rows("β₁ = 1.00", 7, 9) %>%
+  pack_rows("β₁ = 1.25", 10, 12) %>%
+  pack_rows("β₁ = 1.50", 13, 15) %>%
+  pack_rows("Overall Totals", 16, 18) %>%
+  scroll_box(height = "400px")
+```
+
+
+
+
+---
+class: inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Conclusion - Bayesian Method
+
+
+---
+###<font color =#4C5455><code> Conclusion: __general remarks & future research__ </code></font>
+
+<br>
+<br>
+
+--
+> Bayesian algorithm significantly outperformed the standard cointegration strategy; <br><br>
+
+--
+> Superior risk metrics: volatility, Sharpe, Sortino; <br><br>
+
+--
+> Offers a more refined tool for pair selection; <br>
+  > + applicability beyond pairs trading. <br><br>
+
+
+--
+
+> Future research: <br> 
+  > + broader range of markets and asset classes; <br>
+  > + different parameter configurations; <br>
+  > + incorporating transaction costs.
+
+
+
+---
+class: inverse, center, middle
+<!-- title-slide-section-grey,  -->
+
+## Second Proposed Method: Non-Overlapping Block Bootstrap
+
+
+
+---
+###<font color =#4C5455><code> Proposal: __Non-parametric approach__ </code></font>
+
+<br>
+<br>
+
+--
+> __Idea:__ $\hat{\beta carries important information about the linear relationship between the underlying __co-moving__ securities.</br>
+
+--
+> __Proposal:__ Add a __confirmation layer__ to the standard cointegration strategy in pairs trading by evaluating the behavior of the __hedge ratio__.</br>
+
+--
+> Derive the __empirical distribution__ of the hedge-ratio from OLS regression through __non-overlapping block bootstrap__, and establishing two thresholds within this distribution that will serve as confirmation boundaries for trading signal.
+
+<br>
+
+```{r, fig.height=3, fig.width=6, fig.align='center', fig.retina=4, results='hold'}
+
+library(ggplot2)
+
+# Definir parâmetros da distribuição normal
+mean1 <- 1.5
+sd <- 1
+
+# Criar uma sequência densa de valores para suavidade perfeita
+betas <- seq(mean1 - 4*sd, mean1 + 4*sd, length.out = 1000)
+
+# Calcular densidade normal perfeita
+densidade <- dnorm(betas, mean = mean1, sd = sd)
+
+# Criar dataframe para ggplot
+df <- data.frame(betas, densidade)
+
+# Calcular quantis perfeitos para a distribuição normal
+q <- qnorm(c(0.05, 0.95), mean = mean1, sd = sd)
+
+# Plotar usando ggplot2
+ggplot(df, aes(x = betas, y = densidade)) +
+  geom_area(fill = rgb(1, 0.647, 0, alpha = 0.2), color = "gray", linewidth = 1) +
+  geom_vline(xintercept = q, color = "#228b22", linetype = "dashed") +
+  geom_vline(xintercept = mean1, color = "#4a90e2", linewidth = 1) +
+  labs(title = expression("Empirical of " ~ beta[1]),
+       x = expression(beta[1]),
+       y = "Density") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black"),
+    panel.grid = element_blank()
+  )
+```
+
+
+---
+###<font color =#4C5455><code> Fim: __data & methodology__ </code></font>
+
+<br>
+<br>
+
+> Teste <br>
+
+Teste
+
+
+

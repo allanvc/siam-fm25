@@ -1,0 +1,14 @@
+.my-style {
+  font-weight: 200;
+  font-style: italic;
+  font-size: 0.5em;
+  color: gray;
+  text-align: right;
+}
+
+
+.my-style2 {
+  font-weight: normal;
+  font-style: italic;
+  font-size: 0.7em;
+}

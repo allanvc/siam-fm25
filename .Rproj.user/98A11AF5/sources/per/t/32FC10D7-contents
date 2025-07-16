@@ -1,0 +1,233 @@
+# Set seed for reproducibility
+set.seed(123)
+
+# Function to create the normal distribution plot with different alpha values
+create_beta1_distribution_plot_normal <- function(mean_beta = 1.5, sd_beta = 0.3, alpha_small = 0.05, alpha_large = 0.15) {
+  # Save original graphical parameters
+  old_par <- par(no.readonly = TRUE)
+  
+  # Define outer margins to accommodate the general title
+  par(oma = c(0, 0, 3, 0))  # Add 3 lines of margin at the top for the general title
+  
+  # Configure layout with 3 panels: upper graph, legend, lower graph
+  layout(matrix(c(1, 2, 3), nrow = 3, ncol = 1), heights = c(4, 0.5, 4))
+  
+  # Configure margins for the upper graph
+  par(mar = c(4, 4, 5, 5) + 0.9)
+  
+  # Create a sequence for x values of the normal distribution
+  x <- seq(mean_beta - 4*sd_beta, mean_beta + 4*sd_beta, length.out = 1000)
+  
+  # Calculate normal distribution values
+  y <- dnorm(x, mean = mean_beta, sd = sd_beta)
+  
+  # Calculate quantiles for different alpha values
+  q_small_low <- qnorm(alpha_small, mean = mean_beta, sd = sd_beta)
+  q_small_high <- qnorm(1 - alpha_small, mean = mean_beta, sd = sd_beta)
+  q_large_low <- qnorm(alpha_large, mean = mean_beta, sd = sd_beta)
+  q_large_high <- qnorm(1 - alpha_large, mean = mean_beta, sd = sd_beta)
+  
+  # First plot (smaller alpha)
+  plot(x, y, type = "n", xlab = "", ylab = "Density",
+       main = bquote(paste(alpha, " = ", .(alpha_small))),
+       cex.main = 2.6, cex.lab = 2, font.main = 2, bty = "n", xaxt = "n")
+  
+  # Add subtitle
+  mtext("Wider well-behaved region \n(less selective entry,\nmore selective exit)", 
+        side = 3, line = -7.5, at = mean_beta + 3.5*sd_beta, cex = 1.4, font = 3)
+  
+  # Fill the well-behaved region (middle area)
+  x_middle <- x[x >= q_small_low & x <= q_small_high]
+  y_middle <- y[x >= q_small_low & x <= q_small_high]
+  
+  # Fill with solid very light orange
+  polygon(c(x_middle[1], x_middle, x_middle[length(x_middle)]), 
+          c(0, y_middle, 0), col = rgb(1, 0.9, 0.8), border = NA)
+  
+  # Add explanatory arrows
+  par(xpd = TRUE)
+  arrows(x0 = mean_beta + 2*sd_beta, y0 = max(y) * 0.7, x1 = mean_beta + 1.3*sd_beta, y1 = max(y) * 0.5, 
+         length = 0.15, angle = 20, code = 2, 
+         lwd = 2, col = "black")
+  par(xpd = FALSE)
+  
+  # Add hatching with orange lines
+  if (length(x_middle) > 10) {
+    # Calculate interval between lines based on region width
+    region_width <- q_small_high - q_small_low
+    line_interval <- region_width / 15  # 15 lines in the region
+    
+    # Draw vertical orange lines for hatching
+    for (i in seq(q_small_low, q_small_high, by = line_interval)) {
+      # Get max height at this x position
+      height_idx <- which.min(abs(x - i))
+      max_height <- y[height_idx]
+      
+      # Draw the line
+      lines(c(i, i), c(0, max_height), col = "darkorange", lty = 1, lwd = 1)
+    }
+  }
+  
+  # Fill the buy signal region (left) with light gray
+  x_left <- x[x < q_small_low]
+  y_left <- y[x < q_small_low]
+  polygon(c(x_left[1], x_left, x_left[length(x_left)]), 
+          c(0, y_left, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+  
+  # Fill the sell signal region (right) with light gray
+  x_right <- x[x > q_small_high]
+  y_right <- y[x > q_small_high]
+  polygon(c(x_right[1], x_right, x_right[length(x_right)]), 
+          c(0, y_right, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+  
+  # Add the distribution curve
+  lines(x, y, lwd = 2)
+  
+  # Add vertical lines for quantiles
+  abline(v = q_small_low, lty = 2, col = "gray40", lwd = 2)
+  abline(v = q_small_high, lty = 2, col = "gray40", lwd = 2)
+  
+  # Function to add color highlight along x-axis
+  add_color_highlight <- function(x_start, x_end, color) {
+    # Create a thicker rectangular region
+    rect(x_start, -0.04 * max(y), x_end, 0, col = color, border = NA)
+  }
+  
+  # Add the colored highlights for the different regions
+  add_color_highlight(min(x), q_small_low, "gray40")
+  add_color_highlight(q_small_low, q_small_high, "darkorange")
+  add_color_highlight(q_small_high, max(x), "gray40")
+  
+  # Add quantile labels - placed below x-axis
+  # Draw vertical line at lower quantile
+  lines(c(q_small_low, q_small_low), c(0, 0.05 * max(y)), col = "gray40", lty = 2, lwd = 1.5)
+  # Add label below the axis
+  par(xpd = TRUE)
+  text(q_small_low, -0.03 * max(y), bquote(paste("q"[alpha], " = q"[.(alpha_small)])), 
+       cex = 2.2, col = "black", pos = 1)
+  par(xpd = FALSE)
+  
+  # Draw vertical line at upper quantile
+  lines(c(q_small_high, q_small_high), c(0, 0.05 * max(y)), col = "gray40", lty = 2, lwd = 1.5)
+  # Add label below the axis
+  par(xpd = TRUE)
+  text(q_small_high, -0.03 * max(y), bquote(paste("q"[1-alpha], " = q"[.(1-alpha_small)])), 
+       cex = 2.2, col = "black", pos = 1)
+  par(xpd = FALSE)
+  
+  # Central panel for the legend
+  # Configure minimal margins for the legend panel
+  par(mar = c(0, 0, 0, 0))
+  
+  # Create an empty plot for the legend
+  plot(0, 0, type = "n", axes = FALSE, xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1))
+  
+  # Add the centered legend
+  legend("center", 
+         legend = c(
+           expression(paste("well-behaved ", beta[1], " interval (confirmatory region for entry signals)")),
+           expression(paste("ill-behaved ", beta[1], " interval (confirmatory region for stop-loss signals)"))
+         ),
+         fill = c("darkorange", "gray40"),
+         border = NA,
+         bty = "n",
+         cex = 1.63,
+         pt.cex = 10,
+         horiz = FALSE)
+  
+  # Configure margins for the lower graph
+  par(mar = c(3, 4, 5, 5) + 1)
+  
+  # Second plot (larger alpha)
+  plot(x, y, type = "n", xlab = expression(paste("Values of ", beta[1])), ylab = "Density",
+       main = bquote(paste(alpha, " = ", .(alpha_large))), 
+       cex.main = 2.6, cex.lab = 2, font.main = 2, bty = "n", xaxt = "n")
+  
+  # Add subtitle
+  mtext("Narrower well-behaved region \n(more selective entry,\nless selective exit)", 
+        side = 3, line = -7.5, at = mean_beta + 3.3*sd_beta, cex = 1.4, font = 3)
+  
+  # Fill the well-behaved region (middle area) with hatched orange
+  x_middle <- x[x >= q_large_low & x <= q_large_high]
+  y_middle <- y[x >= q_large_low & x <= q_large_high]
+  
+  # First, fill with solid very light orange
+  polygon(c(x_middle[1], x_middle, x_middle[length(x_middle)]), 
+          c(0, y_middle, 0), col = rgb(1, 0.9, 0.8), border = NA)
+  
+  
+  
+  # Then add hatching with orange lines
+  if (length(x_middle) > 10) {
+    # Calculate interval between lines based on region width
+    region_width <- q_large_high - q_large_low
+    line_interval <- region_width / 15  # 15 lines in the region
+    
+    # Draw vertical orange lines for hatching
+    for (i in seq(q_large_low, q_large_high, by = line_interval)) {
+      # Get max height at this x position
+      height_idx <- which.min(abs(x - i))
+      max_height <- y[height_idx]
+      
+      # Draw the line
+      lines(c(i, i), c(0, max_height), col = "darkorange", lty = 1, lwd = 1)
+    }
+  }
+  
+  # Fill the buy signal region (left) with light gray
+  x_left <- x[x < q_large_low]
+  y_left <- y[x < q_large_low]
+  polygon(c(x_left[1], x_left, x_left[length(x_left)]), 
+          c(0, y_left, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+  
+  # Fill the sell signal region (right) with light gray
+  x_right <- x[x > q_large_high]
+  y_right <- y[x > q_large_high]
+  polygon(c(x_right[1], x_right, x_right[length(x_right)]), 
+          c(0, y_right, 0), col = rgb(0.9, 0.9, 0.9), border = NA)
+  
+  # Add the distribution curve
+  lines(x, y, lwd = 2)
+  
+  # Add vertical lines for quantiles
+  abline(v = q_large_low, lty = 2, col = "gray40", lwd = 2)
+  abline(v = q_large_high, lty = 2, col = "gray40", lwd = 2)
+  
+  # Add colored regions along the x-axis for the second plot too
+  add_color_highlight(min(x), q_large_low, "gray40")
+  add_color_highlight(q_large_low, q_large_high, "darkorange")
+  add_color_highlight(q_large_high, max(x), "gray40")
+  
+  # Add quantile labels below x-axis for second plot
+  # Draw vertical line at lower quantile
+  lines(c(q_large_low, q_large_low), c(0, 0.05 * max(y)), col = "gray40", lty = 2, lwd = 1.5)
+  # Add label below the axis
+  par(xpd = TRUE)
+  text(q_large_low, -0.03 * max(y), bquote(paste("q"[alpha], " = q"[.(alpha_large)])), 
+       cex = 2.2, col = "black", pos = 1)
+  par(xpd = FALSE)
+  
+  # Draw vertical line at upper quantile
+  lines(c(q_large_high, q_large_high), c(0, 0.05 * max(y)), col = "gray40", lty = 2, lwd = 1.5)
+  # Add label below the axis
+  par(xpd = TRUE)
+  text(q_large_high, -0.03 * max(y), bquote(paste("q"[1-alpha], " = q"[.(1-alpha_large)])), 
+       cex = 2.2, col = "black", pos = 1)
+  par(xpd = FALSE)
+  
+  # Add two-line title
+  mtext(expression(atop("Empirical Distribution of " * beta[1])),
+        side = 3, line = -2.3, outer = TRUE, cex = 1.7, font = 2)
+  
+  # Add explanatory arrows
+  par(xpd = TRUE)
+  arrows(x0 = mean_beta + 1.7*sd_beta, y0 = max(y) * 0.6, x1 = mean_beta + 1*sd_beta, y1 = max(y) * 0.4, 
+         length = 0.15, angle = 20, code = 2, 
+         lwd = 2, col = "black")
+  par(xpd = FALSE)
+  # Reset to default
+  par(old_par)
+}
+
+# Run the function with the specified parameters
+create_beta1_distribution_plot_normal(mean_beta = 1.5, sd_beta = 0.3, alpha_small = 0.05, alpha_large = 0.15)
