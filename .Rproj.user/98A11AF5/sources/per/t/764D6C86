@@ -1,9 +1,9 @@
 {
     "id": "764D6C86",
-    "path": "~/Documents/conferences/SIAM-jul25/css/siam.css",
+    "path": "~/Documents/conferences/SIAM-FM25/css/siam.css",
     "project_path": "css/siam.css",
     "type": "css",
-    "hash": "467381735",
+    "hash": "2466541754",
     "contents": "",
     "dirty": false,
     "created": 1752365567139.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "134,9",
-        "scrollLine": "0"
+        "cursorPosition": "127,22",
+        "scrollLine": "122"
     },
     "folds": "",
-    "lastKnownWriteTime": 1752381320,
+    "lastKnownWriteTime": 1752680883,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1752381320403,
+    "last_content_update": 1752680883693,
     "read_only": false,
     "read_only_alternatives": []
 }

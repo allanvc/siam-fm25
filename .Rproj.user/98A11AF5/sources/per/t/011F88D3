@@ -1,9 +1,9 @@
 {
     "id": "011F88D3",
-    "path": "~/Documents/conferences/SIAM-jul25/index.Rmd",
+    "path": "~/Documents/conferences/SIAM-FM25/index.Rmd",
     "project_path": "index.Rmd",
     "type": "r_markdown",
-    "hash": "1577894546",
+    "hash": "3508177209",
     "contents": "",
     "dirty": false,
     "created": 1743434502766.0,
@@ -12,17 +12,17 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "771,32",
-        "scrollLine": "759",
+        "cursorPosition": "860,17",
+        "scrollLine": "848",
         "last_setup_crc32": "",
         "docOutlineVisible": "1"
     },
     "folds": "",
-    "lastKnownWriteTime": 1752635239,
+    "lastKnownWriteTime": 1752681426,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1752635239830,
+    "last_content_update": 1752681426148,
     "read_only": false,
     "read_only_alternatives": []
 }

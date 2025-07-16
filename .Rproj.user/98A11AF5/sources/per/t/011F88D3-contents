@@ -2,8 +2,7 @@
 title: "A Bayesian Approach to Generate Distribution-based Signals in Pairs Trading"
 #subtitle: "<s> How to make money in financial markets using stats </s>"
 subtitle: "SIAM Conference on Financial Mathematics and Engineering (FM25)"
-author: "Allan Quadros"
-date: "Department of Management </br> University of North Florida </br> `r Sys.Date()`"
+author: "Allan Quadros†, *Michael Higgins, Brian Silverstein* </br> †Department of Management </br> University of North Florida </br> `r Sys.Date()`"
 output:
   xaringan::moon_reader:
     # self_contained: true
@@ -859,4 +858,4 @@ class: inverse, center, middle
 <!-- title-slide-section-grey,  -->
 
 ## Thank you!<br>
-allanvcq@gmail.com
+n01654020@unf.edu
